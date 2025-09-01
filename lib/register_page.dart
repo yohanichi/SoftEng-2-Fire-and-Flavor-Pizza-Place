@@ -13,35 +13,26 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   bool hidePassword = true; // toggle
 
-  // ✅ Use your InfinityFree domain instead of localhost
-  final String apiBase = "http://3lig2mfs.infinityfree.com";
-
   Future<void> registerUser() async {
-    try {
-      final response = await http.post(
-        Uri.parse("$apiBase/register.php"),
-        body: {
-          "username": usernameController.text,
-          "password": passwordController.text,
-        },
+    final response = await http.post(
+      Uri.parse("http://192.168.254.115/my_application/register.php"),
+      body: {
+        "username": usernameController.text,
+        "password": passwordController.text,
+      },
+    );
+
+    final data = json.decode(response.body);
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(data['message'])));
+
+    if (data['success']) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
       );
-
-      final data = json.decode(response.body);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(data['message'])));
-
-      if (data['success']) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 

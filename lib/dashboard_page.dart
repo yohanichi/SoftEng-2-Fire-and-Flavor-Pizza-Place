@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'login_page.dart';
 import 'admin_dashboard_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   final String username;
   final String role;
-  final String userId; // Database ID
+  final String userId;
 
   DashboardPage({
     required this.username,
@@ -15,191 +16,102 @@ class DashboardPage extends StatelessWidget {
     required this.userId,
   });
 
-  // ✅ Use your InfinityFree domain here
-  final String apiBase = "http://3lig2mfs.infinityfreeapp.com";
+  @override
+  _DashboardPageState createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  late String currentUsername;
+  late String currentRole;
+  late String userId;
+
+  final String apiBase = "http://192.168.254.115/my_application";
+
+  @override
+  void initState() {
+    super.initState();
+    currentUsername = widget.username;
+    currentRole = widget.role;
+    userId = widget.userId;
+  }
 
   Future<void> openProfileDialog(BuildContext context) async {
-    String currentUsername = username;
-    String currentPasswordMask = "******";
+    TextEditingController usernameController = TextEditingController(
+      text: currentUsername,
+    );
+    TextEditingController passwordController = TextEditingController();
 
     await showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text("Edit Profile"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var field in [
-                {
-                  "label": "Username",
-                  "value": currentUsername,
-                  "key": "username",
-                },
-                {
-                  "label": "Password",
-                  "value": currentPasswordMask,
-                  "key": "password",
-                },
-              ])
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text("${field['label']}: ${field['value']}"),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              TextEditingController controller =
-                                  TextEditingController(
-                                    text: field['key'] == "username"
-                                        ? currentUsername
-                                        : "",
-                                  );
-                              bool hideFieldPassword = true;
-
-                              await showDialog(
-                                context: context,
-                                builder: (_) => StatefulBuilder(
-                                  builder: (context, setState) => AlertDialog(
-                                    title: Text("Edit ${field['label']}"),
-                                    content: TextField(
-                                      controller: controller,
-                                      obscureText: field['key'] == "password"
-                                          ? hideFieldPassword
-                                          : false,
-                                      decoration: InputDecoration(
-                                        labelText: field['label'],
-                                        suffixIcon: field['key'] == "password"
-                                            ? IconButton(
-                                                icon: Icon(
-                                                  hideFieldPassword
-                                                      ? Icons.visibility
-                                                      : Icons.visibility_off,
-                                                ),
-                                                onPressed: () {
-                                                  setState(() {
-                                                    hideFieldPassword =
-                                                        !hideFieldPassword;
-                                                  });
-                                                },
-                                              )
-                                            : null,
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text("Cancel"),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          if (field['key'] == "username" &&
-                                              controller.text ==
-                                                  currentUsername) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Username is unchanged!",
-                                                ),
-                                              ),
-                                            );
-                                            return;
-                                          }
-                                          if (field['key'] == "password" &&
-                                              controller.text.isEmpty) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Password cannot be empty!",
-                                                ),
-                                              ),
-                                            );
-                                            return;
-                                          }
-
-                                          Map<String, String> body = {
-                                            "id": userId,
-                                          };
-                                          if (field['key'] == "username") {
-                                            body["username"] = controller.text;
-                                          } else {
-                                            body["password"] = controller.text;
-                                          }
-
-                                          try {
-                                            final response = await http.post(
-                                              Uri.parse(
-                                                "$apiBase/update_user.php",
-                                              ),
-                                              body: body,
-                                            );
-                                            final data = json.decode(
-                                              response.body,
-                                            );
-
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(data['message']),
-                                              ),
-                                            );
-
-                                            if (data['success']) {
-                                              if (field['key'] == "username") {
-                                                setState(() {
-                                                  currentUsername =
-                                                      controller.text;
-                                                });
-                                              }
-                                              Navigator.pop(context);
-                                            }
-                                          } catch (e) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  "Update failed: $e",
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        child: Text("Save"),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Text("Edit"),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Close"),
+      builder: (_) => AlertDialog(
+        title: Text("Edit Profile"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: usernameController,
+              decoration: InputDecoration(labelText: "Username"),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: InputDecoration(labelText: "Password"),
             ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Build request body
+              Map<String, String> body = {"id": userId};
+              if (usernameController.text.isNotEmpty) {
+                body["username"] = usernameController.text;
+              }
+              if (passwordController.text.isNotEmpty) {
+                body["password"] = passwordController.text;
+              }
+
+              if (body.length == 1) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("No changes to save")));
+                return;
+              }
+
+              try {
+                final response = await http.post(
+                  Uri.parse("$apiBase/update_user.php"),
+                  body: body,
+                );
+                final data = json.decode(response.body);
+
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(data['message'])));
+
+                if (data['success']) {
+                  // Update currentUsername if changed
+                  if (body.containsKey("username")) {
+                    setState(() {
+                      currentUsername = body["username"]!;
+                    });
+                  }
+                  Navigator.pop(context); // close dialog
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
+              }
+            },
+            child: Text("Save"),
+          ),
+        ],
       ),
     );
   }
@@ -212,39 +124,56 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Welcome, $username!", style: TextStyle(fontSize: 20)),
+            Text("Welcome, $currentUsername!", style: TextStyle(fontSize: 20)),
             SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: () => openProfileDialog(context),
               child: Text("Edit Profile"),
             ),
-
             SizedBox(height: 20),
-
-            if (role == "admin")
+            if (currentRole == "admin")
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          AdminDashboardPage(loggedInUsername: username),
+                          AdminDashboardPage(loggedInUsername: currentUsername),
                     ),
                   );
                 },
                 child: Text("Go to Admin Dashboard"),
               ),
-
             SizedBox(height: 20),
-
             ElevatedButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginPage()),
-                  (route) => false,
+              onPressed: () async {
+                bool? confirm = await showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text("Logout"),
+                    content: Text("Are you sure you want to log out?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: Text("Logout"),
+                      ),
+                    ],
+                  ),
                 );
+
+                if (confirm == true) {
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  await prefs.clear();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage()),
+                  );
+                }
               },
               child: Text("Logout"),
             ),
