@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'login_page.dart';
 import 'admin_dashboard_page.dart';
+import 'task_page.dart'; // Import the task page
 
 class DashboardPage extends StatefulWidget {
   final String username;
@@ -67,7 +68,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              // Build request body
               Map<String, String> body = {"id": userId};
               if (usernameController.text.isNotEmpty) {
                 body["username"] = usernameController.text;
@@ -95,13 +95,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 ).showSnackBar(SnackBar(content: Text(data['message'])));
 
                 if (data['success']) {
-                  // Update currentUsername if changed
                   if (body.containsKey("username")) {
                     setState(() {
                       currentUsername = body["username"]!;
                     });
                   }
-                  Navigator.pop(context); // close dialog
+                  Navigator.pop(context);
                 }
               } catch (e) {
                 ScaffoldMessenger.of(
@@ -116,6 +115,35 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Future<void> logout() async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Logout"),
+        content: Text("Are you sure you want to log out?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text("Logout"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => LoginPage()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,11 +154,31 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             Text("Welcome, $currentUsername!", style: TextStyle(fontSize: 20)),
             SizedBox(height: 20),
+
             ElevatedButton(
               onPressed: () => openProfileDialog(context),
               child: Text("Edit Profile"),
             ),
+
             SizedBox(height: 20),
+
+            // Tasks button
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        TaskPage(userId: userId, username: currentUsername),
+                  ),
+                );
+              },
+              child: Text("My Tasks"),
+            ),
+
+            SizedBox(height: 20),
+
+            // Admin dashboard button
             if (currentRole == "admin")
               ElevatedButton(
                 onPressed: () {
@@ -144,39 +192,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 },
                 child: Text("Go to Admin Dashboard"),
               ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                bool? confirm = await showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text("Logout"),
-                    content: Text("Are you sure you want to log out?"),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text("Cancel"),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: Text("Logout"),
-                      ),
-                    ],
-                  ),
-                );
 
-                if (confirm == true) {
-                  SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
-                  await prefs.clear();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => LoginPage()),
-                  );
-                }
-              },
-              child: Text("Logout"),
-            ),
+            SizedBox(height: 20),
+
+            ElevatedButton(onPressed: logout, child: Text("Logout")),
           ],
         ),
       ),
