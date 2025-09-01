@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_page.dart';
-import 'admin_dashboard_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -46,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> loginUser() async {
     final response = await http.post(
-      Uri.parse("http://192.168.254.115/my_application/login.php"),
+      Uri.parse("http://192.168.254.115/my_application/my_php_api/login.php"),
       body: {
         "username": usernameController.text,
         "password": passwordController.text,

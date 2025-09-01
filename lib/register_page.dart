@@ -15,7 +15,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> registerUser() async {
     final response = await http.post(
-      Uri.parse("http://192.168.254.115/my_application/register.php"),
+      Uri.parse(
+        "http://192.168.254.115/my_application/my_php_api/users/register.php",
+      ),
       body: {
         "username": usernameController.text,
         "password": passwordController.text,

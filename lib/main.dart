@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Login Demo',
+      title: 'Fire and Flavor Pizza Place',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: SplashDecider(),
       debugShowCheckedModeBanner: false,

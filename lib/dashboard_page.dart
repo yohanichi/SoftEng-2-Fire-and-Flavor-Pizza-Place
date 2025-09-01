@@ -85,7 +85,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
               try {
                 final response = await http.post(
-                  Uri.parse("$apiBase/update_user.php"),
+                  Uri.parse("$apiBase/my_php_api/users/update_user.php"),
                   body: body,
                 );
                 final data = json.decode(response.body);

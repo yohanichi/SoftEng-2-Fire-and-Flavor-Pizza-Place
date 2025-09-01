@@ -25,7 +25,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
 
   Future<void> updateProfile() async {
     final response = await http.post(
-      Uri.parse("$apiBase/update_user.php"),
+      Uri.parse("$apiBase/my_php_api/users/update_user.php"),
       body: {
         "username": widget.username, // current username
         "new_username": usernameController.text,

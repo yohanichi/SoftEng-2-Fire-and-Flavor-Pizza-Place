@@ -27,7 +27,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Future<void> fetchUsers() async {
     setState(() => isLoading = true);
     try {
-      final response = await http.get(Uri.parse("$apiBase/get_users.php"));
+      final response = await http.get(
+        Uri.parse("$apiBase/my_php_api/users/get_users.php"),
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
@@ -90,7 +92,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     if (confirm == true) {
       try {
         final response = await http.post(
-          Uri.parse("$apiBase/delete_user.php"),
+          Uri.parse("$apiBase/my_php_api/users/delete_user.php"),
           body: {"id": id.toString()},
         );
         final result = json.decode(response.body);
@@ -114,8 +116,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         loggedInUsername: widget.loggedInUsername,
         onSave: (formData) async {
           final url = user == null
-              ? "$apiBase/create_user.php"
-              : "$apiBase/update_user.php";
+              ? "$apiBase/my_php_api/users/create_user.php"
+              : "$apiBase/my_php_api/users/update_user.php";
           try {
             final response = await http.post(Uri.parse(url), body: formData);
             final result = json.decode(response.body);

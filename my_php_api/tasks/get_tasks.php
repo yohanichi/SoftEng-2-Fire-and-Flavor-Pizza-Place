@@ -4,7 +4,7 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
-include "db.php";
+include "../db.php";
 
 $user_id = $_GET['user_id'] ?? '';
 // Fetch tasks

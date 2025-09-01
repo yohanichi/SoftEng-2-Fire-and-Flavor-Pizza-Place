@@ -13,7 +13,8 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPageState extends State<TaskPage> {
-  final String apiBase = "http://192.168.254.115/my_application/tasks.php";
+  final String apiBase =
+      "http://192.168.254.115/my_application/my_php_api/tasks/tasks.php";
   List tasks = [];
   bool loading = true;
 
@@ -31,9 +32,17 @@ class _TaskPageState extends State<TaskPage> {
   Future<void> fetchTasks() async {
     setState(() => loading = true);
     try {
+      // ✅ Replace this:
+      // final res = await http.get(
+      //   Uri.parse("$apiBase?action=get&user_id=${widget.userId}"),
+      // );
+
+      // With this:
+      final userIdInt = int.tryParse(widget.userId) ?? 0;
       final res = await http.get(
-        Uri.parse("$apiBase?action=get&user_id=${widget.userId}"),
+        Uri.parse("$apiBase?action=get&user_id=$userIdInt"),
       );
+
       final data = json.decode(res.body);
       if (data['success']) tasks = data['tasks'];
     } catch (e) {
