@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
 import 'register_page.dart';
+import 'dashboard_page.dart';
+import 'task_page.dart';
+import 'admin_dashboard_page.dart';
+import 'edit_profile_page.dart';
+import 'manager_page.dart';
 
 class dash extends StatefulWidget {
   @override
@@ -10,6 +15,8 @@ class dash extends StatefulWidget {
 
 class _dashState extends State<dash> {
   String? username;
+  String? role;
+  String? userId;
 
   @override
   void initState() {
@@ -21,22 +28,26 @@ class _dashState extends State<dash> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       username = prefs.getString("username");
+      role = prefs.getString("role");
+      userId = prefs.getString("id");
     });
   }
 
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    setState(() {
-      username = null;
-    });
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => LoginPage()),
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: username != null
-          ? _buildDrawer(context)
+          ? _buildDrawer(context, username!, role ?? "", userId ?? "")
           : null, // 👈 only show if logged in
       body: Container(
         decoration: const BoxDecoration(
@@ -86,7 +97,6 @@ class _dashState extends State<dash> {
                         NavItem("Contacts", false),
                         const SizedBox(width: 20),
 
-                        // 🔥 Conditional rendering
                         if (username == null) ...[
                           TextButton(
                             onPressed: () {
@@ -96,7 +106,7 @@ class _dashState extends State<dash> {
                               ).then((_) => _loadUser());
                             },
                             style: TextButton.styleFrom(
-                              foregroundColor: Colors.white, // 🔥 text color
+                              foregroundColor: Colors.white,
                             ),
                             child: const Text("Log in"),
                           ),
@@ -125,12 +135,26 @@ class _dashState extends State<dash> {
                         ] else ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              "Hi, $username 👋",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(221, 235, 235, 235),
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EditProfilePage(
+                                      currentUsername: username!,
+                                    ),
+                                  ),
+                                ).then(
+                                  (_) => _loadUser(),
+                                ); // reload username after editing
+                              },
+                              child: Text(
+                                "Hi, $username 👋",
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color.fromARGB(221, 235, 235, 235),
+                                ),
                               ),
                             ),
                           ),
@@ -207,18 +231,14 @@ class _dashState extends State<dash> {
                                   ),
                                   child: const Text(
                                     "Order Now",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ), // 👈 force white
+                                    style: TextStyle(color: Colors.white),
                                   ),
                                 ),
                                 const SizedBox(width: 15),
                                 OutlinedButton(
                                   onPressed: () {},
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(
-                                      color: Colors.white,
-                                    ), // 👈 white border
+                                    side: const BorderSide(color: Colors.white),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 25,
                                       vertical: 15,
@@ -226,9 +246,7 @@ class _dashState extends State<dash> {
                                   ),
                                   child: const Text(
                                     "See our Menu",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ), // 👈 force white
+                                    style: TextStyle(color: Colors.white),
                                   ),
                                 ),
                               ],
@@ -295,53 +313,84 @@ class _dashState extends State<dash> {
   }
 
   // 🔥 Sidebar (Drawer)
-  Drawer _buildDrawer(BuildContext context) {
+  Drawer _buildDrawer(
+    BuildContext context,
+    String currentUsername,
+    String currentRole,
+    String userId,
+  ) {
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Colors.redAccent),
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.grey),
             child: Text(
-              username != null
-                  ? "Welcome, $username!"
-                  : "Welcome to Fire & Flavor!",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              'Navigation',
+              style: TextStyle(color: Colors.white, fontSize: 24),
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text("Home"),
-            onTap: () => Navigator.pop(context),
+            leading: Icon(Icons.dashboard),
+            title: const Text('Dashboard'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DashboardPage(
+                    username: currentUsername,
+                    role: currentRole,
+                    userId: userId,
+                  ),
+                ),
+              );
+            },
           ),
           ListTile(
-            leading: const Icon(Icons.menu_book),
-            title: const Text("Menu"),
-            onTap: () {},
+            leading: Icon(Icons.task),
+            title: const Text('My Tasks'),
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      TaskPage(userId: userId, username: currentUsername),
+                ),
+              );
+            },
           ),
-          ListTile(
-            leading: const Icon(Icons.info),
-            title: const Text("About Us"),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.contact_phone),
-            title: const Text("Contacts"),
-            onTap: () {},
-          ),
-          if (username != null)
+          if (currentRole.toLowerCase() == "admin") ...[
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("Log out"),
+              leading: Icon(Icons.admin_panel_settings),
+              title: const Text('Admin Panel'),
               onTap: () {
-                Navigator.pop(context);
-                _logout();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        AdminDashboardPage(loggedInUsername: currentUsername),
+                  ),
+                );
               },
             ),
+          ],
+          if (currentRole.toLowerCase() == "manager") ...[
+            ListTile(
+              leading: Icon(Icons.manage_accounts),
+              title: const Text('Manager Page'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => ManagerPage()),
+                );
+              },
+            ),
+          ],
+          ListTile(
+            leading: Icon(Icons.logout),
+            title: const Text('Log out'),
+            onTap: _logout,
+          ),
         ],
       ),
     );
