@@ -2,8 +2,19 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'dashboard_page.dart';
 
 class ManagerPage extends StatefulWidget {
+  final String username;
+  final String role;
+  final String userId;
+
+  ManagerPage({
+    required this.username,
+    required this.role,
+    required this.userId,
+  });
+
   @override
   _ManagerPageState createState() => _ManagerPageState();
 }
@@ -17,6 +28,9 @@ class _ManagerPageState extends State<ManagerPage> {
   // 🔹 Sorting state
   int? sortColumnIndex;
   bool sortAscending = true;
+
+  // 🔹 Show/Hide hidden materials
+  bool showHidden = false;
 
   @override
   void initState() {
@@ -102,7 +116,6 @@ class _ManagerPageState extends State<ManagerPage> {
                   FilteringTextInputFormatter.digitsOnly, // ✅ only integers
                 ],
               ),
-
               DropdownButtonFormField<String>(
                 value: selectedType,
                 items: ["weight", "volume", "count"]
@@ -225,9 +238,24 @@ class _ManagerPageState extends State<ManagerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DashboardPage(
+                  username: widget.username,
+                  role: widget.role,
+                  userId: widget.userId,
+                ),
+              ),
+            );
+          },
+        ),
         title: Text("Manager - Raw Materials"),
-        // 🔹 Removed the top-right add button inside AppBar
       ),
+
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -259,7 +287,6 @@ class _ManagerPageState extends State<ManagerPage> {
                           child: ConstrainedBox(
                             constraints: BoxConstraints(minWidth: 900),
                             child: DataTable(
-                              // 🔹 Table settings unchanged
                               sortColumnIndex: sortColumnIndex,
                               sortAscending: sortAscending,
                               columnSpacing: 40,
@@ -335,76 +362,111 @@ class _ManagerPageState extends State<ManagerPage> {
                                 ),
                                 const DataColumn(label: Text("Actions")),
                               ],
-                              rows: materials.map<DataRow>((material) {
-                                return DataRow(
-                                  cells: [
-                                    DataCell(Text(material['id'].toString())),
-                                    DataCell(
-                                      Text(material['name'] ?? "Unnamed"),
-                                    ),
-                                    DataCell(
-                                      Text(material['quantity'].toString()),
-                                    ),
-                                    DataCell(Text(material['type'] ?? "")),
-                                    DataCell(Text(material['unit'] ?? "")),
-                                    DataCell(Text(material['status'] ?? "")),
-                                    DataCell(
-                                      Row(
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.edit,
-                                              color: Colors.blue,
-                                            ),
-                                            onPressed: () => addOrEditMaterial(
-                                              material: material,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: Icon(
-                                              material['status'] == "visible"
-                                                  ? Icons.visibility
-                                                  : Icons.visibility_off,
-                                              color:
-                                                  material['status'] ==
-                                                      "visible"
-                                                  ? Colors.green
-                                                  : Colors.red,
-                                            ),
-                                            onPressed: () => toggleMaterial(
-                                              int.parse(
-                                                material['id'].toString(),
+                              rows: materials
+                                  .where(
+                                    (m) =>
+                                        showHidden || m['status'] == "visible",
+                                  )
+                                  .map<DataRow>((material) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(
+                                          Text(material['id'].toString()),
+                                        ),
+                                        DataCell(
+                                          Text(material['name'] ?? "Unnamed"),
+                                        ),
+                                        DataCell(
+                                          Text(material['quantity'].toString()),
+                                        ),
+                                        DataCell(Text(material['type'] ?? "")),
+                                        DataCell(Text(material['unit'] ?? "")),
+                                        DataCell(
+                                          Text(material['status'] ?? ""),
+                                        ),
+                                        DataCell(
+                                          Row(
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.edit,
+                                                  color: Colors.blue,
+                                                ),
+                                                onPressed: () =>
+                                                    addOrEditMaterial(
+                                                      material: material,
+                                                    ),
                                               ),
-                                              material['status'],
-                                            ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  material['status'] ==
+                                                          "visible"
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color:
+                                                      material['status'] ==
+                                                          "visible"
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                ),
+                                                onPressed: () => toggleMaterial(
+                                                  int.parse(
+                                                    material['id'].toString(),
+                                                  ),
+                                                  material['status'],
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.delete,
+                                                  color: Colors.red,
+                                                ),
+                                                onPressed: () =>
+                                                    deleteMaterial(material),
+                                              ),
+                                            ],
                                           ),
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            onPressed: () =>
-                                                deleteMaterial(material),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                                        ),
+                                      ],
+                                    );
+                                  })
+                                  .toList(),
                             ),
                           ),
                         ),
                       ),
 
-                      // 🔹 Add Entry button (top right above container)
+                      // 🔹 Add Entry + Show/Hide Buttons (top right above container)
+                      // 🔹 Show/Hide + Add Entry Buttons (top right above container)
                       Positioned(
                         right: 10,
                         top: 0,
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.add),
-                          label: Text("Add Entry"),
-                          onPressed: () => addOrEditMaterial(),
+                        child: Row(
+                          children: [
+                            ElevatedButton.icon(
+                              icon: Icon(
+                                showHidden
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              label: Text(
+                                showHidden
+                                    ? "Hide Hidden Items"
+                                    : "Show Hidden Items",
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  showHidden = !showHidden;
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                            ElevatedButton.icon(
+                              icon: Icon(Icons.add),
+                              label: Text("Add Entry"),
+                              onPressed: () => addOrEditMaterial(),
+                            ),
+                          ],
                         ),
                       ),
                     ],

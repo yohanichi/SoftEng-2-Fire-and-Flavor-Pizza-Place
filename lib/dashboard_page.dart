@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'login_page.dart';
 import 'admin_dashboard_page.dart';
 import 'task_page.dart'; // Import the task page
+import 'manager_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final String username;
@@ -66,6 +67,22 @@ class _DashboardPageState extends State<DashboardPage> {
             onPressed: () => Navigator.pop(context),
             child: Text("Cancel"),
           ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ManagerPage(
+                    username: currentUsername,
+                    role: currentRole,
+                    userId: userId,
+                  ),
+                ),
+              );
+            },
+            child: Text("Go to Manager"),
+          ),
+
           ElevatedButton(
             onPressed: () async {
               Map<String, String> body = {"id": userId};

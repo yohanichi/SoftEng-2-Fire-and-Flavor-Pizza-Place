@@ -381,11 +381,18 @@ class _dashState extends State<dash> {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => ManagerPage()),
+                  MaterialPageRoute(
+                    builder: (_) => ManagerPage(
+                      username: currentUsername,
+                      role: currentRole,
+                      userId: userId,
+                    ),
+                  ),
                 );
               },
             ),
           ],
+
           ListTile(
             leading: Icon(Icons.logout),
             title: const Text('Log out'),
