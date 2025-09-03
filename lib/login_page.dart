@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dashboard_page.dart';
+import 'dash.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -33,12 +33,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _redirectUser(String username, String role, String userId) {
-    // Everyone goes to Dashboard first
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            DashboardPage(username: username, role: role, userId: userId),
+        builder: (_) => dash(), // 👈 go to dash.dart
       ),
     );
   }
@@ -55,7 +53,6 @@ class _LoginPageState extends State<LoginPage> {
     final data = json.decode(response.body);
 
     if (data['success']) {
-      // Save login info for persistence
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString("username", data['username']);
       await prefs.setString("role", data['role']);
@@ -72,40 +69,114 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Login")),
-      body: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: usernameController,
-              decoration: InputDecoration(labelText: "Username"),
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: hidePassword,
-              decoration: InputDecoration(
-                labelText: "Password",
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    hidePassword ? Icons.visibility : Icons.visibility_off,
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/pizza.png"), // 🔥 full background
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6), // translucent overlay
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Fire and Flavor Pizza Place",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 8,
+                          color: Colors.black54,
+                          offset: Offset(2, 2),
+                        ),
+                      ],
+                    ),
                   ),
-                  onPressed: () => setState(() => hidePassword = !hidePassword),
-                ),
+                  SizedBox(height: 20),
+                  TextField(
+                    controller: usernameController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: "Username",
+                      labelStyle: TextStyle(color: Colors.white),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: hidePassword,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      labelStyle: TextStyle(color: Colors.white),
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          hidePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.white,
+                        ),
+                        onPressed: () =>
+                            setState(() => hidePassword = !hidePassword),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: loginUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepOrange,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      "Login",
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => RegisterPage()),
+                      );
+                    },
+                    child: Text(
+                      "Need a new account? Register here",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: loginUser, child: Text("Login")),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => RegisterPage()),
-                );
-              },
-              child: Text("Need a new account? Register here"),
-            ),
-          ],
+          ),
         ),
       ),
     );
