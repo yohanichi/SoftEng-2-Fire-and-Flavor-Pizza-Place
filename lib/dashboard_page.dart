@@ -448,7 +448,6 @@ class _SidebarItem extends StatefulWidget {
 
 class _SidebarItemState extends State<_SidebarItem> {
   bool _isHovering = false;
-  bool _showText = false;
 
   @override
   Widget build(BuildContext context) {
