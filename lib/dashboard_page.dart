@@ -6,7 +6,6 @@ import 'admin_dashboard_page.dart';
 import 'manager_page.dart';
 import 'task_page.dart';
 import 'dash.dart'; // 👈 Your landing page
-import 'edit_profile_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final String username;
@@ -166,7 +165,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
             Row(
               children: [
-                // 🔹 Sidebar
                 // 🔹 Sidebar
                 AnimatedContainer(
                   duration: Duration(milliseconds: 250),
@@ -485,10 +483,10 @@ class _SidebarItemState extends State<_SidebarItem> {
                   color: widget.isActive ? Colors.orangeAccent : widget.color,
                 ),
               ),
-              if (_showText) ...[
+              if (widget.isOpen) ...[
                 SizedBox(width: 12),
                 AnimatedOpacity(
-                  opacity: _showText ? 1.0 : 0.0,
+                  opacity: 1.0,
                   duration: Duration(milliseconds: 250),
                   child: Text(
                     widget.label,
