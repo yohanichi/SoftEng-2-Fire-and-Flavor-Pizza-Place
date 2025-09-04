@@ -121,98 +121,117 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> openUserDialog({Map? user}) async {
-    await showDialog(
-      context: context,
-      builder: (_) => UserDialog(
-        user: user,
-        loggedInUsername: widget.loggedInUsername,
-        onSave: (formData) async {
-          final url = user == null
-              ? "$apiBase/create_user.php"
-              : "$apiBase/update_user.php";
-          try {
-            final response = await http.post(Uri.parse(url), body: formData);
-            final result = json.decode(response.body);
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(result['message'])));
-            fetchUsers();
-          } catch (e) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text("Operation failed: $e")));
-          }
-        },
-      ),
-    );
-  }
-
-  Future<void> openProfileDialog(BuildContext context) async {
     TextEditingController usernameController = TextEditingController(
-      text: currentUsername,
+      text: user?['username'] ?? '',
     );
     TextEditingController passwordController = TextEditingController();
+    String role = user?['role'] ?? 'user';
 
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text("Edit Profile"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: usernameController,
-              decoration: InputDecoration(labelText: "Username"),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(labelText: "Password"),
-            ),
-          ],
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text(
+          user == null ? "Add User" : "Edit User",
+          style: TextStyle(color: Colors.orangeAccent),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: usernameController,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Username",
+                  labelStyle: TextStyle(color: Colors.orangeAccent),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orangeAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  labelStyle: TextStyle(color: Colors.orangeAccent),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orangeAccent),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                dropdownColor: Colors.black87,
+                value: role,
+                items: ["admin", "manager", "user"]
+                    .map(
+                      (r) => DropdownMenuItem(
+                        value: r,
+                        child: Text(r, style: TextStyle(color: Colors.white)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => role = v!,
+                decoration: InputDecoration(
+                  labelText: "Role",
+                  labelStyle: TextStyle(color: Colors.orangeAccent),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Cancel", style: TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orangeAccent,
+              foregroundColor: Colors.black,
+            ),
             onPressed: () async {
-              Map<String, String> body = {"id": "1"}; // first admin ID
-              if (usernameController.text.isNotEmpty) {
-                body["username"] = usernameController.text;
-              }
-              if (passwordController.text.isNotEmpty) {
-                body["password"] = passwordController.text;
-              }
-
-              if (body.length == 1) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text("No changes to save")));
-                return;
+              Map<String, String> formData = {
+                "username": usernameController.text,
+                "password": passwordController.text,
+                "role": role,
+              };
+              if (user != null) {
+                formData["id"] = user['id'].toString();
               }
 
+              final url = user == null
+                  ? "$apiBase/create_user.php"
+                  : "$apiBase/update_user.php";
               try {
                 final response = await http.post(
-                  Uri.parse("$apiBase/update_user.php"),
-                  body: body,
+                  Uri.parse(url),
+                  body: formData,
                 );
-                final data = json.decode(response.body);
+                final result = json.decode(response.body);
                 ScaffoldMessenger.of(
                   context,
-                ).showSnackBar(SnackBar(content: Text(data['message'])));
-                if (data['success'] && body.containsKey("username")) {
-                  setState(() {
-                    currentUsername = body["username"]!;
-                  });
-                  Navigator.pop(context);
-                }
+                ).showSnackBar(SnackBar(content: Text(result['message'])));
+                fetchUsers();
+                Navigator.pop(ctx);
               } catch (e) {
                 ScaffoldMessenger.of(
                   context,
-                ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
+                ).showSnackBar(SnackBar(content: Text("Operation failed: $e")));
               }
             },
             child: Text("Save"),
