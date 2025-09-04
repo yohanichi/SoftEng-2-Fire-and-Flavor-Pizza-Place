@@ -375,12 +375,23 @@ class _ManagerPageState extends State<ManagerPage> {
                     // Manager - Current Page (highlighted & unclickable)
                     _SidebarItem(
                       imagePath: "assets/images/manager.png",
-                      label: "Manager",
+                      label: "Materials Records",
                       isOpen: _isSidebarOpen,
                       onTap: () {}, // disables click
                       color: Colors.orangeAccent, // highlighted color
                     ),
-
+                    // New Sub-Module #2 button
+                    if (widget.role.toLowerCase() == "manager")
+                      _SidebarItem(
+                        imagePath:
+                            "assets/images/submodule.png", // placeholder icon
+                        label: "Sub-Module #2",
+                        isOpen: _isSidebarOpen,
+                        onTap: () {
+                          // does nothing for now
+                        },
+                        color: Colors.white, // default color
+                      ),
                     // Tasks button
                     _SidebarItem(
                       imagePath: "assets/images/task.png",

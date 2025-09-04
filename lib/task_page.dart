@@ -398,7 +398,7 @@ class _TaskPageState extends State<TaskPage> {
                     if (widget.role.toLowerCase() == "manager")
                       _SidebarItem(
                         imagePath: "assets/images/manager.png",
-                        label: "Manager Dashboard",
+                        label: "Materials Records",
                         isOpen: _isSidebarOpen,
                         onTap: () {
                           Navigator.push(
@@ -412,6 +412,17 @@ class _TaskPageState extends State<TaskPage> {
                             ),
                           );
                         },
+                      ),
+                    if (widget.role.toLowerCase() == "manager")
+                      _SidebarItem(
+                        imagePath:
+                            "assets/images/submodule.png", // placeholder icon
+                        label: "Sub-Module #2",
+                        isOpen: _isSidebarOpen,
+                        onTap: () {
+                          // does nothing for now
+                        },
+                        color: Colors.white, // default color
                       ),
                     _SidebarItem(
                       imagePath: "assets/images/task.png",
