@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dash.dart';
+import 'dashboard_page.dart';
 import 'register_page.dart';
+import 'dash.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -28,156 +29,228 @@ class _LoginPageState extends State<LoginPage> {
     String? savedUserId = prefs.getString("id");
 
     if (savedUsername != null && savedRole != null && savedUserId != null) {
-      _redirectUser(savedUsername, savedRole, savedUserId);
+      _redirectUser();
     }
   }
 
-  void _redirectUser(String username, String role, String userId) {
+  void _redirectUser() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => dash(), // 👈 go to dash.dart
-      ),
+      MaterialPageRoute(builder: (_) => dash()),
     );
   }
 
   Future<void> loginUser() async {
-    final response = await http.post(
-      Uri.parse("http://192.168.254.115/my_application/my_php_api/login.php"),
-      body: {
-        "username": usernameController.text,
-        "password": passwordController.text,
-      },
-    );
+    try {
+      final response = await http.post(
+        Uri.parse("http://192.168.254.115/my_application/my_php_api/login.php"),
+        body: {
+          "username": usernameController.text,
+          "password": passwordController.text,
+        },
+      );
 
-    final data = json.decode(response.body);
+      final data = json.decode(response.body);
 
-    if (data['success']) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString("username", data['username']);
-      await prefs.setString("role", data['role']);
-      await prefs.setString("id", data['id'].toString());
+      if (data['success'].toString() == "true" ||
+          data['success'].toString() == "1") {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString("username", data['username']);
+        await prefs.setString("role", data['role']);
+        await prefs.setString("id", data['id'].toString());
 
-      _redirectUser(data['username'], data['role'], data['id'].toString());
-    } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Login successful! Redirecting...")),
+        );
+
+        Future.delayed(Duration(seconds: 1), () {
+          _redirectUser();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Login failed")),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(data['message'])));
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/pizza.png"), // 🔥 full background
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          // 🔹 Full Background Image
+          Positioned.fill(
+            child: Image.asset(
+              "assets/images/chalkart.png", // 👈 replace with your image
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(20),
+
+          // 🔹 Gradient Overlay
+          Positioned.fill(
             child: Container(
-              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6), // translucent overlay
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Fire and Flavor Pizza Place",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 8,
-                          color: Colors.black54,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: usernameController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Username",
-                      labelStyle: TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.white10,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: hidePassword,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      labelStyle: TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.white10,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          hidePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.white,
-                        ),
-                        onPressed: () =>
-                            setState(() => hidePassword = !hidePassword),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: loginUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrange,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      "Login",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => RegisterPage()),
-                      );
-                    },
-                    child: Text(
-                      "Need a new account? Register here",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.black.withOpacity(0.6),
+                    Colors.black.withOpacity(0.3),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
             ),
           ),
-        ),
+
+          // 🔹 Login Card
+          Center(
+            child: SingleChildScrollView(
+              child: Container(
+                width: 350,
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.75), // darker background
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black54,
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: IconButton(
+                        icon: Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      "Login",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+
+                    // 🔹 Username Field
+                    TextField(
+                      controller: usernameController,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(
+                          0.1,
+                        ), // smoky effect
+                        labelText: "Username",
+                        labelStyle: TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white54),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.orangeAccent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 15),
+
+                    // 🔹 Password Field
+                    TextField(
+                      controller: passwordController,
+                      obscureText: hidePassword,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        labelText: "Password",
+                        labelStyle: TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white54),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.orangeAccent,
+                            width: 2,
+                          ),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            hidePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.white70,
+                          ),
+                          onPressed: () =>
+                              setState(() => hidePassword = !hidePassword),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 20),
+
+                    // 🔹 Login Button
+                    ElevatedButton(
+                      onPressed: loginUser,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 50),
+                        backgroundColor: Colors.orangeAccent,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text("Login"),
+                    ),
+
+                    // 🔹 Register Link
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => RegisterPage()),
+                        );
+                      },
+                      child: Text(
+                        "Don't have an account? Register",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

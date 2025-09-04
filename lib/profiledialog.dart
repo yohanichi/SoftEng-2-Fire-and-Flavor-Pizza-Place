@@ -14,7 +14,8 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   late TextEditingController usernameController;
   late TextEditingController passwordController;
-  final String apiBase = "http://192.168.254.115/my_application";
+  final String apiBase =
+      "http://192.168.254.115/my_application/my_php_api/user";
 
   @override
   void initState() {
@@ -25,7 +26,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
 
   Future<void> updateProfile() async {
     final response = await http.post(
-      Uri.parse("$apiBase/my_php_api/users/update_user.php"),
+      Uri.parse("$apiBase/update_user.php"),
       body: {
         "username": widget.username, // current username
         "new_username": usernameController.text,

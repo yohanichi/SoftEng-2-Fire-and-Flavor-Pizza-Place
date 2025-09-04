@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_page.dart';
+import 'admin_dashboard_page.dart';
+import 'task_page.dart';
+import 'dash.dart';
 
 class ManagerPage extends StatefulWidget {
   final String username;
@@ -25,12 +29,11 @@ class _ManagerPageState extends State<ManagerPage> {
   List materials = [];
   bool isLoading = true;
 
-  // 🔹 Sorting state
   int? sortColumnIndex;
   bool sortAscending = true;
 
-  // 🔹 Show/Hide hidden materials
   bool showHidden = false;
+  bool _isSidebarOpen = false;
 
   @override
   void initState() {
@@ -55,7 +58,6 @@ class _ManagerPageState extends State<ManagerPage> {
     }
   }
 
-  // 🔹 Toggle visible/hidden
   Future<void> toggleMaterial(int id, String currentStatus) async {
     String newStatus = currentStatus == "visible" ? "hidden" : "visible";
     try {
@@ -71,7 +73,6 @@ class _ManagerPageState extends State<ManagerPage> {
     }
   }
 
-  // 🔹 Add or edit material
   Future<void> addOrEditMaterial({Map? material}) async {
     TextEditingController nameCtrl = TextEditingController(
       text: material?['name'] ?? "",
@@ -100,60 +101,125 @@ class _ManagerPageState extends State<ManagerPage> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: Text(material == null ? "New Material" : "Edit Material"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(labelText: "Material Name"),
-              ),
-              TextField(
-                controller: qtyCtrl,
-                decoration: InputDecoration(labelText: "Quantity"),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly, // ✅ only integers
-                ],
-              ),
-              DropdownButtonFormField<String>(
-                value: selectedType,
-                items: ["weight", "volume", "count"]
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                    .toList(),
-                onChanged: (v) {
-                  setState(() {
-                    selectedType = v!;
-                    selectedUnit = getUnitsForType(selectedType)[0];
-                  });
-                },
-                decoration: InputDecoration(labelText: "Type"),
-              ),
-              DropdownButtonFormField<String>(
-                value: selectedUnit,
-                items: getUnitsForType(selectedType)
-                    .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                    .toList(),
-                onChanged: (v) => setState(() => selectedUnit = v!),
-                decoration: InputDecoration(labelText: "Unit"),
-              ),
-            ],
+          backgroundColor: const Color.fromARGB(
+            255,
+            41,
+            41,
+            41,
+          ).withOpacity(0.85),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            material == null ? "New Material" : "Edit Material",
+            style: TextStyle(
+              color: Colors.orangeAccent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Material Name",
+                    labelStyle: TextStyle(color: Colors.orangeAccent),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orangeAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orange),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextField(
+                  controller: qtyCtrl,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Quantity",
+                    labelStyle: TextStyle(color: Colors.orangeAccent),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orangeAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orange),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+                SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  dropdownColor: Colors.black87,
+                  value: selectedType,
+                  items: ["weight", "volume", "count"]
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t, style: TextStyle(color: Colors.white)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      selectedType = v!;
+                      selectedUnit = getUnitsForType(selectedType)[0];
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: "Type",
+                    labelStyle: TextStyle(color: Colors.orangeAccent),
+                  ),
+                ),
+                SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  dropdownColor: Colors.black87,
+                  value: selectedUnit,
+                  items: getUnitsForType(selectedType)
+                      .map(
+                        (u) => DropdownMenuItem(
+                          value: u,
+                          child: Text(u, style: TextStyle(color: Colors.white)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => selectedUnit = v!),
+                  decoration: InputDecoration(
+                    labelText: "Unit",
+                    labelStyle: TextStyle(color: Colors.orangeAccent),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
+              child: Text("Cancel", style: TextStyle(color: Colors.white70)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () async {
                 if (qtyCtrl.text.isEmpty ||
                     int.tryParse(qtyCtrl.text) == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Please enter a valid integer quantity"),
-                    ),
+                    SnackBar(content: Text("Please enter a valid integer")),
                   );
-                  return; // stop here if invalid
+                  return;
                 }
 
                 String url = material == null
@@ -182,13 +248,12 @@ class _ManagerPageState extends State<ManagerPage> {
     );
   }
 
-  // 🔹 Delete material
   Future<void> deleteMaterial(Map material) async {
     bool? confirm = await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text("Confirm Delete"),
-        content: Text("Are you sure you want to delete ${material['name']}?"),
+        content: Text("Delete ${material['name']}?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -215,7 +280,6 @@ class _ManagerPageState extends State<ManagerPage> {
     }
   }
 
-  // 🔹 Sorting helper
   void onSort<T>(
     Comparable<T> Function(Map material) getField,
     int columnIndex,
@@ -234,246 +298,729 @@ class _ManagerPageState extends State<ManagerPage> {
     });
   }
 
+  void toggleSidebar() {
+    setState(() {
+      _isSidebarOpen = !_isSidebarOpen;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => DashboardPage(
-                  username: widget.username,
-                  role: widget.role,
-                  userId: widget.userId,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.black.withOpacity(0.95), Colors.grey[900]!],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-            );
-          },
-        ),
-        title: Text("Manager - Raw Materials"),
-      ),
-
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Stack(
-                    children: [
-                      // 🔹 Main Table Container
-                      Container(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.95,
-                        ),
-                        margin: const EdgeInsets.only(top: 70),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: Offset(2, 2),
-                            ),
-                          ],
-                        ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(minWidth: 900),
-                            child: DataTable(
-                              sortColumnIndex: sortColumnIndex,
-                              sortAscending: sortAscending,
-                              columnSpacing: 40,
-                              headingRowHeight: 56,
-                              dataRowHeight: 56,
-                              columns: [
-                                DataColumn(
-                                  label: Text("ID"),
-                                  numeric: true,
-                                  onSort: (colIndex, asc) {
-                                    onSort<num>(
-                                      (m) =>
-                                          int.tryParse(m['id'].toString()) ?? 0,
-                                      colIndex,
-                                      asc,
-                                    );
-                                  },
-                                ),
-                                DataColumn(
-                                  label: Text("Name"),
-                                  onSort: (colIndex, asc) {
-                                    onSort<String>(
-                                      (m) => m['name'] ?? "",
-                                      colIndex,
-                                      asc,
-                                    );
-                                  },
-                                ),
-                                DataColumn(
-                                  label: Text("Quantity"),
-                                  numeric: true,
-                                  onSort: (colIndex, asc) {
-                                    onSort<num>(
-                                      (m) =>
-                                          num.tryParse(
-                                            m['quantity'].toString(),
-                                          ) ??
-                                          0,
-                                      colIndex,
-                                      asc,
-                                    );
-                                  },
-                                ),
-                                DataColumn(
-                                  label: Text("Type"),
-                                  onSort: (colIndex, asc) {
-                                    onSort<String>(
-                                      (m) => m['type'] ?? "",
-                                      colIndex,
-                                      asc,
-                                    );
-                                  },
-                                ),
-                                DataColumn(
-                                  label: Text("Unit"),
-                                  onSort: (colIndex, asc) {
-                                    onSort<String>(
-                                      (m) => m['unit'] ?? "",
-                                      colIndex,
-                                      asc,
-                                    );
-                                  },
-                                ),
-                                DataColumn(
-                                  label: Text("Status"),
-                                  onSort: (colIndex, asc) {
-                                    onSort<String>(
-                                      (m) => m['status'] ?? "",
-                                      colIndex,
-                                      asc,
-                                    );
-                                  },
-                                ),
-                                const DataColumn(label: Text("Actions")),
-                              ],
-                              rows: materials
-                                  .where(
-                                    (m) =>
-                                        showHidden || m['status'] == "visible",
-                                  )
-                                  .map<DataRow>((material) {
-                                    return DataRow(
-                                      cells: [
-                                        DataCell(
-                                          Text(material['id'].toString()),
-                                        ),
-                                        DataCell(
-                                          Text(material['name'] ?? "Unnamed"),
-                                        ),
-                                        DataCell(
-                                          Text(material['quantity'].toString()),
-                                        ),
-                                        DataCell(Text(material['type'] ?? "")),
-                                        DataCell(Text(material['unit'] ?? "")),
-                                        DataCell(
-                                          Text(material['status'] ?? ""),
-                                        ),
-                                        DataCell(
-                                          Row(
-                                            children: [
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.edit,
-                                                  color: Colors.blue,
-                                                ),
-                                                onPressed: () =>
-                                                    addOrEditMaterial(
-                                                      material: material,
-                                                    ),
-                                              ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  material['status'] ==
-                                                          "visible"
-                                                      ? Icons.visibility
-                                                      : Icons.visibility_off,
-                                                  color:
-                                                      material['status'] ==
-                                                          "visible"
-                                                      ? Colors.green
-                                                      : Colors.red,
-                                                ),
-                                                onPressed: () => toggleMaterial(
-                                                  int.parse(
-                                                    material['id'].toString(),
-                                                  ),
-                                                  material['status'],
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.delete,
-                                                  color: Colors.red,
-                                                ),
-                                                onPressed: () =>
-                                                    deleteMaterial(material),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  })
-                                  .toList(),
+            ),
+          ),
+          Row(
+            children: [
+              // Sidebar
+              AnimatedContainer(
+                duration: Duration(milliseconds: 250),
+                width: _isSidebarOpen ? 220 : 60,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.9),
+                  border: Border(
+                    right: BorderSide(color: Colors.orange, width: 2),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Home button
+                    _SidebarItem(
+                      imagePath: "assets/images/home.png",
+                      label: "Home",
+                      isOpen: _isSidebarOpen,
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DashboardPage(
+                              username: widget.username,
+                              role: widget.role,
+                              userId: widget.userId,
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
+                    ),
 
-                      // 🔹 Add Entry + Show/Hide Buttons (top right above container)
-                      // 🔹 Show/Hide + Add Entry Buttons (top right above container)
-                      Positioned(
-                        right: 10,
-                        top: 0,
-                        child: Row(
-                          children: [
-                            ElevatedButton.icon(
-                              icon: Icon(
-                                showHidden
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              label: Text(
-                                showHidden
-                                    ? "Hide Hidden Items"
-                                    : "Show Hidden Items",
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  showHidden = !showHidden;
-                                });
-                              },
+                    // Dashboard button (clickable)
+                    _SidebarItem(
+                      imagePath:
+                          "assets/images/dashboard.png", // choose your dashboard icon
+                      label: "Dashboard",
+                      isOpen: _isSidebarOpen,
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DashboardPage(
+                              username: widget.username,
+                              role: widget.role,
+                              userId: widget.userId,
                             ),
-                            const SizedBox(width: 10),
-                            ElevatedButton.icon(
-                              icon: Icon(Icons.add),
-                              label: Text("Add Entry"),
-                              onPressed: () => addOrEditMaterial(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Manager - Current Page (highlighted & unclickable)
+                    _SidebarItem(
+                      imagePath: "assets/images/manager.png",
+                      label: "Manager",
+                      isOpen: _isSidebarOpen,
+                      onTap: () {}, // disables click
+                      color: Colors.orangeAccent, // highlighted color
+                    ),
+
+                    // Tasks button
+                    _SidebarItem(
+                      imagePath: "assets/images/task.png",
+                      label: "Tasks",
+                      isOpen: _isSidebarOpen,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TaskPage(
+                              userId: widget.userId,
+                              username: widget.username,
+                              role: widget.role,
                             ),
-                          ],
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Logout button
+                    _SidebarItem(
+                      imagePath: "assets/images/logout.png",
+                      label: "Logout",
+                      isOpen: _isSidebarOpen,
+                      color: Colors.redAccent,
+                      onTap: () async {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        await prefs.clear();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => dash()),
+                          (route) => false,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              // Main content
+              Expanded(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 15,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.black, Colors.grey[900]!],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _isSidebarOpen
+                                  ? Icons.arrow_back_ios
+                                  : Icons.menu,
+                            ),
+                            color: Colors.orange,
+                            onPressed: toggleSidebar,
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            "Manager - Raw Materials",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 3, color: Colors.orange),
+                    Expanded(
+                      child: isLoading
+                          ? Center(child: CircularProgressIndicator())
+                          : SingleChildScrollView(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Stack(
+                                    children: [
+                                      Container(
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.95,
+                                        ),
+                                        margin: EdgeInsets.only(top: 70),
+                                        padding: EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Color.fromARGB(
+                                            255,
+                                            37,
+                                            37,
+                                            37,
+                                          ).withOpacity(0.85),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black26,
+                                              blurRadius: 8,
+                                              offset: Offset(2, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth: 900,
+                                            ),
+                                            child: Theme(
+                                              data: Theme.of(context).copyWith(
+                                                dataTableTheme: DataTableThemeData(
+                                                  headingTextStyle: TextStyle(
+                                                    color: Colors
+                                                        .white, // <-- arrows inherit this
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                  dataTextStyle: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                  ),
+                                                  dividerThickness: 1,
+                                                ),
+                                              ),
+                                              child: DataTable(
+                                                sortColumnIndex:
+                                                    sortColumnIndex,
+                                                sortAscending: sortAscending,
+                                                columnSpacing: 40,
+                                                headingRowHeight: 56,
+                                                dataRowHeight: 56,
+                                                columns: [
+                                                  DataColumn(
+                                                    label: Text("ID"),
+                                                    onSort: (columnIndex, ascending) {
+                                                      setState(() {
+                                                        sortColumnIndex =
+                                                            columnIndex;
+                                                        sortAscending =
+                                                            ascending;
+                                                        materials.sort(
+                                                          (a, b) => ascending
+                                                              ? int.parse(
+                                                                  a['id']
+                                                                      .toString(),
+                                                                ).compareTo(
+                                                                  int.parse(
+                                                                    b['id']
+                                                                        .toString(),
+                                                                  ),
+                                                                )
+                                                              : int.parse(
+                                                                  b['id']
+                                                                      .toString(),
+                                                                ).compareTo(
+                                                                  int.parse(
+                                                                    a['id']
+                                                                        .toString(),
+                                                                  ),
+                                                                ),
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  DataColumn(
+                                                    label: Text("Name"),
+                                                    onSort: (columnIndex, ascending) {
+                                                      setState(() {
+                                                        sortColumnIndex =
+                                                            columnIndex;
+                                                        sortAscending =
+                                                            ascending;
+                                                        materials.sort(
+                                                          (a, b) => ascending
+                                                              ? (a['name'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      b['name'] ??
+                                                                          "",
+                                                                    )
+                                                              : (b['name'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      a['name'] ??
+                                                                          "",
+                                                                    ),
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  DataColumn(
+                                                    label: Text("Qty"),
+                                                    onSort: (columnIndex, ascending) {
+                                                      setState(() {
+                                                        sortColumnIndex =
+                                                            columnIndex;
+                                                        sortAscending =
+                                                            ascending;
+                                                        materials.sort(
+                                                          (a, b) => ascending
+                                                              ? int.parse(
+                                                                  a['quantity']
+                                                                      .toString(),
+                                                                ).compareTo(
+                                                                  int.parse(
+                                                                    b['quantity']
+                                                                        .toString(),
+                                                                  ),
+                                                                )
+                                                              : int.parse(
+                                                                  b['quantity']
+                                                                      .toString(),
+                                                                ).compareTo(
+                                                                  int.parse(
+                                                                    a['quantity']
+                                                                        .toString(),
+                                                                  ),
+                                                                ),
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  DataColumn(
+                                                    label: Text("Type"),
+                                                    onSort: (columnIndex, ascending) {
+                                                      setState(() {
+                                                        sortColumnIndex =
+                                                            columnIndex;
+                                                        sortAscending =
+                                                            ascending;
+                                                        materials.sort(
+                                                          (a, b) => ascending
+                                                              ? (a['type'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      b['type'] ??
+                                                                          "",
+                                                                    )
+                                                              : (b['type'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      a['type'] ??
+                                                                          "",
+                                                                    ),
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  DataColumn(
+                                                    label: Text("Unit"),
+                                                    onSort: (columnIndex, ascending) {
+                                                      setState(() {
+                                                        sortColumnIndex =
+                                                            columnIndex;
+                                                        sortAscending =
+                                                            ascending;
+                                                        materials.sort(
+                                                          (a, b) => ascending
+                                                              ? (a['unit'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      b['unit'] ??
+                                                                          "",
+                                                                    )
+                                                              : (b['unit'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      a['unit'] ??
+                                                                          "",
+                                                                    ),
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  DataColumn(
+                                                    label: Text("Status"),
+                                                    onSort: (columnIndex, ascending) {
+                                                      setState(() {
+                                                        sortColumnIndex =
+                                                            columnIndex;
+                                                        sortAscending =
+                                                            ascending;
+                                                        materials.sort(
+                                                          (a, b) => ascending
+                                                              ? (a['status'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      b['status'] ??
+                                                                          "",
+                                                                    )
+                                                              : (b['status'] ??
+                                                                        "")
+                                                                    .compareTo(
+                                                                      a['status'] ??
+                                                                          "",
+                                                                    ),
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  DataColumn(
+                                                    label: Text("Actions"),
+                                                  ),
+                                                ],
+                                                rows: materials
+                                                    .where(
+                                                      (m) =>
+                                                          showHidden ||
+                                                          m['status'] ==
+                                                              "visible",
+                                                    )
+                                                    .map<DataRow>((material) {
+                                                      return DataRow(
+                                                        cells: [
+                                                          DataCell(
+                                                            Text(
+                                                              material['id']
+                                                                  .toString(),
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              material['name'] ??
+                                                                  "Unnamed",
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              material['quantity']
+                                                                  .toString(),
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              material['type'] ??
+                                                                  "",
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              material['unit'] ??
+                                                                  "",
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              material['status'] ??
+                                                                  "",
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Row(
+                                                              children: [
+                                                                IconButton(
+                                                                  icon: Icon(
+                                                                    Icons.edit,
+                                                                    color: Colors
+                                                                        .blue,
+                                                                  ),
+                                                                  onPressed: () =>
+                                                                      addOrEditMaterial(
+                                                                        material:
+                                                                            material,
+                                                                      ),
+                                                                ),
+                                                                IconButton(
+                                                                  icon: Icon(
+                                                                    material['status'] ==
+                                                                            "visible"
+                                                                        ? Icons
+                                                                              .visibility
+                                                                        : Icons
+                                                                              .visibility_off,
+                                                                    color:
+                                                                        material['status'] ==
+                                                                            "visible"
+                                                                        ? Colors
+                                                                              .green
+                                                                        : Colors
+                                                                              .red,
+                                                                  ),
+                                                                  onPressed: () => toggleMaterial(
+                                                                    int.parse(
+                                                                      material['id']
+                                                                          .toString(),
+                                                                    ),
+                                                                    material['status'],
+                                                                  ),
+                                                                ),
+                                                                IconButton(
+                                                                  icon: Icon(
+                                                                    Icons
+                                                                        .delete,
+                                                                    color: Colors
+                                                                        .red,
+                                                                  ),
+                                                                  onPressed: () =>
+                                                                      deleteMaterial(
+                                                                        material,
+                                                                      ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      );
+                                                    })
+                                                    .toList(),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 10,
+                                        top: 20,
+                                        child: Row(
+                                          children: [
+                                            // Show/Hide Hidden button
+                                            SizedBox(
+                                              height: 40, // fixed height
+                                              child: InkWell(
+                                                onTap: () {
+                                                  setState(() {
+                                                    showHidden = !showHidden;
+                                                  });
+                                                },
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[850]!
+                                                        .withOpacity(0.9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center, // align icon and text
+                                                    children: [
+                                                      Icon(
+                                                        showHidden
+                                                            ? Icons
+                                                                  .visibility_off
+                                                            : Icons.visibility,
+                                                        color:
+                                                            Colors.orangeAccent,
+                                                        size:
+                                                            20, // explicitly set size
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Text(
+                                                        showHidden
+                                                            ? "Hide Hidden"
+                                                            : "Show Hidden",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            // Add Entry button
+                                            SizedBox(
+                                              height: 40, // same height
+                                              child: InkWell(
+                                                onTap: () =>
+                                                    addOrEditMaterial(),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[850]!
+                                                        .withOpacity(0.9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center, // center icon and text
+                                                    children: [
+                                                      SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: Image.asset(
+                                                          "assets/images/add.png",
+                                                          fit: BoxFit.contain,
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Text(
+                                                        "Add Entry",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SidebarItem extends StatefulWidget {
+  final String imagePath;
+  final String label;
+  final bool isOpen;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const _SidebarItem({
+    required this.imagePath,
+    required this.label,
+    required this.isOpen,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  State<_SidebarItem> createState() => _SidebarItemState();
+}
+
+class _SidebarItemState extends State<_SidebarItem> {
+  bool _isHovering = false;
+  bool _showText = false;
+
+  @override
+  void didUpdateWidget(covariant _SidebarItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isOpen && !_showText) {
+      Future.delayed(Duration(milliseconds: 200), () {
+        if (mounted && widget.isOpen) setState(() => _showText = true);
+      });
+    } else if (!widget.isOpen && _showText) {
+      setState(() => _showText = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          decoration: BoxDecoration(
+            color: _isHovering
+                ? Colors.orange.withOpacity(0.2)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 30,
+                height: 30,
+                child: Image.asset(
+                  widget.imagePath,
+                  fit: BoxFit.contain,
+                  color: widget.color,
+                ),
+              ),
+              if (_showText) ...[
+                SizedBox(width: 12),
+                AnimatedOpacity(
+                  opacity: _showText ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 250),
+                  child: Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: widget.color ?? Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

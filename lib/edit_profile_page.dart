@@ -41,7 +41,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final response = await http.post(
-        Uri.parse("$apiBase/my_php_api/users/update_user.php"),
+        Uri.parse("$apiBase/my_php_api/user/update_user.php"),
         body: {
           "id": userId,
           "username": _usernameController.text,
