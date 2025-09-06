@@ -12,7 +12,7 @@ if ($conn->connect_error) {
 }
 
 // Query all users including status
-$sql = "SELECT id, username, role, status FROM users";
+$sql = "SELECT id, username, role, status, email FROM users";
 $result = $conn->query($sql);
 
 $users = [];

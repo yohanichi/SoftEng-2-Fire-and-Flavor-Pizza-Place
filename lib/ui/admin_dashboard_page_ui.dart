@@ -247,6 +247,21 @@ class AdminDashboardPageUI extends StatelessWidget {
                                             ),
                                             DataColumn(
                                               label: Text(
+                                                "Email",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              onSort:
+                                                  (columnIndex, ascending) =>
+                                                      onSort(
+                                                        (u) => u['email'] ?? '',
+                                                        columnIndex,
+                                                        ascending,
+                                                      ),
+                                            ),
+                                            DataColumn(
+                                              label: Text(
                                                 "Actions",
                                                 style: TextStyle(
                                                   color: Colors.white,
@@ -292,6 +307,15 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                 DataCell(
                                                   Text(
                                                     user['status'] ?? 'active',
+                                                    style: TextStyle(
+                                                      color: Colors
+                                                          .white70, // <-- Lighten text here
+                                                    ),
+                                                  ),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                    user['email'] ?? '',
                                                     style: TextStyle(
                                                       color: Colors
                                                           .white70, // <-- Lighten text here

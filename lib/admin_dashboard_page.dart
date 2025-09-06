@@ -161,6 +161,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       text: user?['username'] ?? '',
     );
     TextEditingController passwordController = TextEditingController();
+    TextEditingController emailController = TextEditingController(
+      text: user?['email'] ?? '',
+    );
 
     // Ensure dropdown values are valid
     String role =
@@ -191,6 +194,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Username",
+                    labelStyle: TextStyle(color: Colors.orangeAccent),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orangeAccent),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orange),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                // Email
+                TextField(
+                  controller: emailController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Email",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.orangeAccent),
@@ -294,15 +316,42 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 foregroundColor: Colors.black,
               ),
               onPressed: () async {
-                if (usernameController.text.isEmpty) {
+                final username = usernameController.text;
+                final email = emailController.text;
+
+                // Username restrictions
+                final usernameValid =
+                    username.length >= 5 &&
+                    RegExp(r'[0-9]').hasMatch(username) &&
+                    !username.contains(' ');
+
+                if (!usernameValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "Username must be at least 5 characters, contain at least 1 number, and have no spaces.",
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                if (username.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Username cannot be empty")),
                   );
                   return;
                 }
+                if (email.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Email cannot be empty")),
+                  );
+                  return;
+                }
 
                 Map<String, String> formData = {
-                  "username": usernameController.text,
+                  "username": username,
+                  "email": email,
                   "role": role,
                   "status": status,
                   "loggedInUsername": widget.loggedInUsername,

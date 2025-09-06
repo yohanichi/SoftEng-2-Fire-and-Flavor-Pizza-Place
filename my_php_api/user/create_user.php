@@ -11,9 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = $_POST['role'] ?? 'user';
     $status = $_POST['status'] ?? 'active';
     $loggedInUsername = $_POST['loggedInUsername'] ?? '';
+    $email = $_POST['email'] ?? '';
 
-    if (empty($username) || empty($password)) {
-        echo json_encode(['success' => false, 'message' => 'Username and password required']);
+    if (empty($username) || empty($password) || empty($email)) {
+        echo json_encode(['success' => false, 'message' => 'Username, password, and email required']);
         exit;
     }
 
@@ -24,9 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    $sql = "INSERT INTO users (username, password, role, status) VALUES (?, ?, ?, ?)";
+    $sql = "INSERT INTO users (username, password, role, status, email) VALUES (?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssss", $username, $hashed_password, $role, $status);
+    $stmt->bind_param("sssss", $username, $hashed_password, $role, $status, $email);
 
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'User created successfully']);

@@ -14,6 +14,7 @@ class UserDialog extends StatefulWidget {
 class _UserDialogState extends State<UserDialog> {
   late TextEditingController usernameController;
   late TextEditingController passwordController;
+  late TextEditingController emailController;
   String role = "user";
   String status = "active";
   bool isFirstAdmin = false;
@@ -28,6 +29,9 @@ class _UserDialogState extends State<UserDialog> {
       text: widget.user?['username'] ?? "",
     );
     passwordController = TextEditingController();
+    emailController = TextEditingController(
+      text: widget.user?['email'] ?? "",
+    );
 
     role = ["admin", "manager", "user"].contains(widget.user?['role'])
         ? widget.user!['role']
@@ -219,6 +223,23 @@ class _UserDialogState extends State<UserDialog> {
                 ),
               ],
             ),
+            // Email
+            Row(
+              children: [
+                Expanded(child: Text("Email: ${widget.user?['email'] ?? ''}")),
+                IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed:
+                      (!isFirstAdmin || isLoggedInFirstAdmin) &&
+                          !(isEditingOtherAdmin && !isLoggedInFirstAdmin)
+                      ? () => _editField(
+                          "email",
+                          widget.user?['email'] ?? "",
+                        )
+                      : null,
+                ),
+              ],
+            ),
             // Role
             Row(
               children: [
@@ -286,6 +307,7 @@ class _UserDialogState extends State<UserDialog> {
                 "password": "",
                 "role": role,
                 "status": status,
+                "email": emailController.text,
                 "loggedInUsername": widget.loggedInUsername,
               });
               Navigator.pop(context);

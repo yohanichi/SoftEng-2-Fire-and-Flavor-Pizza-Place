@@ -7,6 +7,7 @@ import 'manager_page.dart';
 import 'task_page.dart';
 import 'dash.dart';
 import 'ui/dashboard_page_ui.dart'; // <-- Import the UI
+import 'edit_profile_page.dart'; // <-- Add this import
 
 class DashboardPage extends StatefulWidget {
   final String username;
@@ -46,92 +47,13 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  Future<void> _logoutAndGoToDash(BuildContext context) async {
+  void _logoutAndGoToDash() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => dash()),
       (route) => false,
-    );
-  }
-
-  Future<void> openProfileDialog(BuildContext context) async {
-    TextEditingController usernameController = TextEditingController(
-      text: currentUsername,
-    );
-    TextEditingController passwordController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text("Edit Profile"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: usernameController,
-              decoration: InputDecoration(labelText: "Username"),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(labelText: "Password"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Map<String, String> body = {"id": userId};
-              if (usernameController.text.isNotEmpty) {
-                body["username"] = usernameController.text;
-              }
-              if (passwordController.text.isNotEmpty) {
-                body["password"] = passwordController.text;
-              }
-
-              if (body.length == 1) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text("No changes to save")));
-                return;
-              }
-
-              try {
-                final response = await http.post(
-                  Uri.parse("$apiBase/update_user.php"),
-                  body: body,
-                );
-                final data = json.decode(response.body);
-
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(data['message'])));
-
-                if (data['success']) {
-                  if (body.containsKey("username")) {
-                    setState(() {
-                      currentUsername = body["username"]!;
-                    });
-                  }
-                  Navigator.pop(context);
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
-              }
-            },
-            child: Text("Save"),
-          ),
-        ],
-      ),
     );
   }
 
@@ -192,7 +114,14 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       },
       onLogout: _logoutAndGoToDash,
-      onEditProfile: openProfileDialog,
+      onEditProfile: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EditProfilePage(currentUsername: currentUsername),
+          ),
+        );
+      }, // <-- Go to EditProfilePage instead of dialog
     );
   }
 }

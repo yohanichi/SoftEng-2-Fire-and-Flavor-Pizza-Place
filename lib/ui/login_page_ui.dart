@@ -86,7 +86,7 @@ class LoginPageUI extends StatelessWidget {
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.1),
-                        labelText: "Username",
+                        labelText: "Username or Email", // <-- Update label
                         labelStyle: TextStyle(color: Colors.white70),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),

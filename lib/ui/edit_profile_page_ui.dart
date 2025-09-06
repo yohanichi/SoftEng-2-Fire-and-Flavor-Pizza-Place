@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class EditProfilePageUI extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController passwordController;
+  final TextEditingController emailController; // <-- Add this
   final bool hidePassword;
   final VoidCallback onBack;
   final VoidCallback onSave;
@@ -11,6 +12,7 @@ class EditProfilePageUI extends StatelessWidget {
   const EditProfilePageUI({
     required this.usernameController,
     required this.passwordController,
+    required this.emailController, // <-- Add this
     required this.hidePassword,
     required this.onBack,
     required this.onSave,
@@ -89,6 +91,32 @@ class EditProfilePageUI extends StatelessWidget {
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.1),
                         labelText: "Username",
+                        labelStyle: TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.white54),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.orangeAccent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    // Email Field
+                    TextField(
+                      controller: emailController, // <-- Add this field
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        labelText: "Email",
                         labelStyle: TextStyle(color: Colors.white70),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),

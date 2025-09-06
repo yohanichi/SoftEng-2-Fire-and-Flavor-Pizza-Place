@@ -11,8 +11,8 @@ class DashboardPageUI extends StatelessWidget {
   final VoidCallback? onManagerPage;
   final VoidCallback? onSubModule;
   final VoidCallback onTaskPage;
-  final Future<void> Function(BuildContext) onLogout;
-  final Future<void> Function(BuildContext) onEditProfile;
+  final VoidCallback onLogout;
+  final VoidCallback onEditProfile;
 
   const DashboardPageUI({
     required this.isSidebarOpen,
@@ -131,9 +131,9 @@ class DashboardPageUI extends StatelessWidget {
                               ),
                               onSelected: (value) async {
                                 if (value == "profile") {
-                                  await onEditProfile(context);
+                                  onEditProfile();
                                 } else if (value == "logout") {
-                                  await onLogout(context);
+                                  onLogout();
                                 }
                               },
                               itemBuilder: (context) => [
@@ -211,7 +211,7 @@ class _Sidebar extends StatefulWidget {
   final VoidCallback? onManagerPage;
   final VoidCallback? onSubModule;
   final VoidCallback onTaskPage;
-  final Future<void> Function(BuildContext) onLogout;
+  final VoidCallback onLogout;
   final String currentRole;
 
   const _Sidebar({
@@ -273,7 +273,7 @@ class _SidebarState extends State<_Sidebar> {
             imagePath: "assets/images/dashboard.png",
             label: "Dashboard",
             isOpen: widget.isSidebarOpen && showText,
-            onTap: null,
+            onTap: widget.onLogout,
             isActive: true,
             hovered: hoveredLabel == "Dashboard",
             onHover: (hovering) {
@@ -338,7 +338,7 @@ class _SidebarState extends State<_Sidebar> {
             label: "Logout",
             isOpen: widget.isSidebarOpen && showText,
             color: Colors.redAccent,
-            onTap: () => widget.onLogout(context),
+            onTap: () => widget.onLogout,
             hovered: hoveredLabel == "Logout",
             onHover: (hovering) {
               setState(() => hoveredLabel = hovering ? "Logout" : null);

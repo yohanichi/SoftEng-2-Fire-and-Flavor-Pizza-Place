@@ -17,6 +17,7 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController usernameController;
   late TextEditingController passwordController;
+  late TextEditingController emailController; // <-- Add this
   bool hidePassword = true;
 
   @override
@@ -24,29 +25,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     usernameController = TextEditingController(text: widget.currentUsername);
     passwordController = TextEditingController();
+    emailController = TextEditingController(); // <-- Initialize
+    loadEmail();
+  }
+
+  Future<void> loadEmail() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    emailController.text = prefs.getString("email") ?? "";
   }
 
   Future<void> saveProfile() async {
     if (usernameController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Username cannot be empty")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Username cannot be empty")),
+      );
+      return;
+    }
+    if (emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Email cannot be empty")),
+      );
       return;
     }
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userId = prefs.getString("id"); // fetch userId from shared prefs
+    String? userId = prefs.getString("id");
 
     if (userId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("User not found")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("User not found")),
+      );
       return;
     }
 
     Map<String, String> body = {
       "id": userId,
       "username": usernameController.text,
+      "email": emailController.text, // <-- Add email
     };
 
     if (passwordController.text.isNotEmpty) {
@@ -69,6 +84,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (data['success']) {
         await prefs.setString("username", usernameController.text);
+        await prefs.setString("email", emailController.text); // <-- Save email
 
         Navigator.pushReplacement(
           context,
@@ -76,9 +92,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
@@ -87,6 +103,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return EditProfilePageUI(
       usernameController: usernameController,
       passwordController: passwordController,
+      emailController: emailController, // <-- Pass to UI
       hidePassword: hidePassword,
       onBack: () => Navigator.pop(context),
       onSave: saveProfile,

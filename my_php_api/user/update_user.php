@@ -17,6 +17,7 @@ $username = $_POST['username'] ?? null;
 $password = $_POST['password'] ?? null;
 $role = $_POST['role'] ?? null;
 $status = $_POST['status'] ?? null;
+$email = $_POST['email'] ?? null;
 $loggedInUsername = $_POST['loggedInUsername'] ?? '';
 
 // Validate ID
@@ -60,6 +61,13 @@ if ($role !== null) {
 if ($status !== null) {
     $fields[] = "status = ?";
     $params[] = $status;
+    $types .= 's';
+}
+
+// Only update email if provided
+if ($email !== null && $email !== '') {
+    $fields[] = "email = ?";
+    $params[] = $email;
     $types .= 's';
 }
 
