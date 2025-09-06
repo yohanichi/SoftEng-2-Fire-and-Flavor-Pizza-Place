@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dash.dart';
 import 'task_page.dart';
 import 'dashboard_page.dart';
-import 'ui/admin_dashboard_page_ui.dart'; // <-- Add this import
+import 'ui/admin_dashboard_page_ui.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   final String loggedInUsername;
@@ -52,7 +52,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             for (int i = 0; i < users.length; i++) {
               users[i]['display_id'] = i + 1;
               users[i]['status'] = users[i]['status'] ?? 'active';
-              // normalize role and status to match dropdown items
               users[i]['role'] =
                   ([
                     "admin",
@@ -165,7 +164,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       text: user?['email'] ?? '',
     );
 
-    // Ensure dropdown values are valid
     String role =
         (["admin", "manager", "user"].contains(user?['role']?.toLowerCase()))
         ? user!['role'].toLowerCase()
@@ -188,117 +186,30 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Username
                 TextField(
                   controller: usernameController,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Username",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orangeAccent),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orange),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
                 SizedBox(height: 12),
-
-                // Email
                 TextField(
                   controller: emailController,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Email",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orangeAccent),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orange),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
                 SizedBox(height: 12),
-
-                // Password
                 TextField(
                   controller: passwordController,
                   obscureText: true,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Password",
-                    labelStyle: TextStyle(color: Colors.orangeAccent),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orangeAccent),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orange),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12),
-
-                // Role Dropdown
-                DropdownButtonFormField<String>(
-                  dropdownColor: Colors.black87,
-                  value: role,
-                  items: ["admin", "manager", "user"]
-                      .map(
-                        (r) => DropdownMenuItem(
-                          value: r,
-                          child: Text(r, style: TextStyle(color: Colors.white)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) {
-                    setState(() {
-                      if (v == "admin" && widget.loggedInUsername != "admin") {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Only the first admin can assign admin role",
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      role = v!;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Role",
-                    labelStyle: TextStyle(color: Colors.orangeAccent),
-                  ),
-                ),
-                SizedBox(height: 12),
-
-                // Status Dropdown
-                DropdownButtonFormField<String>(
-                  dropdownColor: Colors.black87,
-                  value: status,
-                  items: ["active", "blocked"]
-                      .map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s, style: TextStyle(color: Colors.white)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) {
-                    setState(() {
-                      status = v!;
-                    });
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Status",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
                   ),
                 ),
@@ -316,10 +227,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 foregroundColor: Colors.black,
               ),
               onPressed: () async {
-                final username = usernameController.text;
-                final email = emailController.text;
+                final username = usernameController.text.trim();
+                final email = emailController.text.trim();
+                final password = passwordController.text;
 
-                // Username restrictions
+                // Username validation
                 final usernameValid =
                     username.length >= 5 &&
                     RegExp(r'[0-9]').hasMatch(username) &&
@@ -336,17 +248,35 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   return;
                 }
 
-                if (username.isEmpty) {
+                // Email validation
+                final emailValid = RegExp(
+                  r'^[^@]+@[^@]+\.[^@]+',
+                ).hasMatch(email);
+                if (!emailValid) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Username cannot be empty")),
+                    SnackBar(content: Text("Please enter a valid email.")),
                   );
                   return;
                 }
-                if (email.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Email cannot be empty")),
-                  );
-                  return;
+
+                // Password validation (only if entered)
+                if (password.isNotEmpty) {
+                  final passwordValid =
+                      password.length >= 5 &&
+                      RegExp(
+                        r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$',
+                      ).hasMatch(password) &&
+                      !password.contains(' ');
+                  if (!passwordValid) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Password must be at least 5 characters, contain at least 1 letter and 1 number, and have no spaces.",
+                        ),
+                      ),
+                    );
+                    return;
+                  }
                 }
 
                 Map<String, String> formData = {
@@ -357,8 +287,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   "loggedInUsername": widget.loggedInUsername,
                 };
 
-                if (passwordController.text.isNotEmpty) {
-                  formData["password"] = passwordController.text;
+                if (password.isNotEmpty) {
+                  formData["password"] = password;
                 }
 
                 if (user != null) {
@@ -428,13 +358,50 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
           ElevatedButton(
             onPressed: () async {
+              final username = usernameController.text.trim();
+              final password = passwordController.text;
+
+              // Username validation
+              if (username.isNotEmpty) {
+                final usernameValid =
+                    username.length >= 5 &&
+                    RegExp(r'[0-9]').hasMatch(username) &&
+                    !username.contains(' ');
+                if (!usernameValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "Username must be at least 5 characters, contain at least 1 number, and have no spaces.",
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+
+              // Password validation
+              if (password.isNotEmpty) {
+                final passwordValid =
+                    password.length >= 5 &&
+                    RegExp(
+                      r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$',
+                    ).hasMatch(password) &&
+                    !password.contains(' ');
+                if (!passwordValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "Password must be at least 5 characters, contain at least 1 letter and 1 number, and have no spaces.",
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+
               Map<String, String> body = {"id": "1"}; // first admin ID
-              if (usernameController.text.isNotEmpty) {
-                body["username"] = usernameController.text;
-              }
-              if (passwordController.text.isNotEmpty) {
-                body["password"] = passwordController.text;
-              }
+              if (username.isNotEmpty) body["username"] = username;
+              if (password.isNotEmpty) body["password"] = password;
 
               if (body.length == 1) {
                 ScaffoldMessenger.of(
@@ -498,7 +465,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           MaterialPageRoute(builder: (_) => dash()),
           (route) => false,
         );
-      }, // <-- This matches manager page
+      },
       onDashboard: () {
         Navigator.pushReplacement(
           context,

@@ -17,16 +17,25 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController usernameController;
   late TextEditingController passwordController;
-  late TextEditingController emailController; // <-- Add this
+  late TextEditingController emailController;
   bool hidePassword = true;
+  bool isSaving = false; // <-- For loading state
 
   @override
   void initState() {
     super.initState();
     usernameController = TextEditingController(text: widget.currentUsername);
     passwordController = TextEditingController();
-    emailController = TextEditingController(); // <-- Initialize
+    emailController = TextEditingController();
     loadEmail();
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    emailController.dispose();
+    super.dispose();
   }
 
   Future<void> loadEmail() async {
@@ -36,37 +45,58 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> saveProfile() async {
     if (usernameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Username cannot be empty")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Username cannot be empty")));
       return;
     }
     if (emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Email cannot be empty")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Email cannot be empty")));
       return;
+    }
+
+    // 🔒 Password validation (only if provided)
+    if (passwordController.text.isNotEmpty) {
+      final password = passwordController.text;
+      final passwordValid = RegExp(
+        r'^(?=.*[A-Za-z])(?=.*\d).{5,}$',
+      ).hasMatch(password);
+
+      if (!passwordValid) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Password must be at least 5 characters, contain at least 1 letter and 1 number.",
+            ),
+          ),
+        );
+        return;
+      }
     }
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString("id");
 
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("User not found")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("User not found")));
       return;
     }
 
     Map<String, String> body = {
       "id": userId,
       "username": usernameController.text,
-      "email": emailController.text, // <-- Add email
+      "email": emailController.text,
     };
 
     if (passwordController.text.isNotEmpty) {
       body["password"] = passwordController.text;
     }
+
+    setState(() => isSaving = true);
 
     try {
       final response = await http.post(
@@ -84,7 +114,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (data['success']) {
         await prefs.setString("username", usernameController.text);
-        await prefs.setString("email", emailController.text); // <-- Save email
+        await prefs.setString("email", emailController.text);
 
         Navigator.pushReplacement(
           context,
@@ -92,9 +122,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      setState(() => isSaving = false);
     }
   }
 
@@ -103,8 +135,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return EditProfilePageUI(
       usernameController: usernameController,
       passwordController: passwordController,
-      emailController: emailController, // <-- Pass to UI
+      emailController: emailController,
       hidePassword: hidePassword,
+      isSaving: isSaving, // <-- Pass loading state
       onBack: () => Navigator.pop(context),
       onSave: saveProfile,
       onTogglePassword: () => setState(() => hidePassword = !hidePassword),

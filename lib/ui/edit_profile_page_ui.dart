@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class EditProfilePageUI extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController passwordController;
-  final TextEditingController emailController; // <-- Add this
+  final TextEditingController emailController;
   final bool hidePassword;
+  final bool isSaving; // <-- New
   final VoidCallback onBack;
   final VoidCallback onSave;
   final VoidCallback onTogglePassword;
@@ -12,8 +13,9 @@ class EditProfilePageUI extends StatelessWidget {
   const EditProfilePageUI({
     required this.usernameController,
     required this.passwordController,
-    required this.emailController, // <-- Add this
+    required this.emailController,
     required this.hidePassword,
+    required this.isSaving, // <-- New
     required this.onBack,
     required this.onSave,
     required this.onTogglePassword,
@@ -87,52 +89,14 @@ class EditProfilePageUI extends StatelessWidget {
                     TextField(
                       controller: usernameController,
                       style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
-                        labelText: "Username",
-                        labelStyle: TextStyle(color: Colors.white70),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white54),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.orangeAccent,
-                            width: 2,
-                          ),
-                        ),
-                      ),
+                      decoration: _inputDecoration("Username"),
                     ),
                     SizedBox(height: 15),
                     // Email Field
                     TextField(
-                      controller: emailController, // <-- Add this field
+                      controller: emailController,
                       style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
-                        labelText: "Email",
-                        labelStyle: TextStyle(color: Colors.white70),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white54),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.orangeAccent,
-                            width: 2,
-                          ),
-                        ),
-                      ),
+                      decoration: _inputDecoration("Email"),
                     ),
                     SizedBox(height: 15),
                     // Password Field
@@ -140,25 +104,7 @@ class EditProfilePageUI extends StatelessWidget {
                       controller: passwordController,
                       obscureText: hidePassword,
                       style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.1),
-                        labelText: "New Password",
-                        labelStyle: TextStyle(color: Colors.white70),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.white54),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.orangeAccent,
-                            width: 2,
-                          ),
-                        ),
+                      decoration: _inputDecoration("New Password").copyWith(
                         suffixIcon: IconButton(
                           icon: Icon(
                             hidePassword
@@ -173,7 +119,7 @@ class EditProfilePageUI extends StatelessWidget {
                     SizedBox(height: 20),
                     // Save Button
                     ElevatedButton(
-                      onPressed: onSave,
+                      onPressed: isSaving ? null : onSave,
                       style: ElevatedButton.styleFrom(
                         minimumSize: Size(double.infinity, 50),
                         backgroundColor: Colors.orangeAccent,
@@ -182,7 +128,16 @@ class EditProfilePageUI extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text("Save"),
+                      child: isSaving
+                          ? SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text("Save"),
                     ),
                   ],
                 ),
@@ -190,6 +145,24 @@ class EditProfilePageUI extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.white70),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white54),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.orangeAccent, width: 2),
       ),
     );
   }

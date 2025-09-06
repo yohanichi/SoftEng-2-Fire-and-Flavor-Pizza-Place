@@ -4,7 +4,11 @@ class RegisterPageUI extends StatelessWidget {
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
-  final TextEditingController emailController; // <-- Add this
+  final TextEditingController emailController;
+  final String? usernameError;
+  final String? emailError;
+  final String? passwordError;
+  final String? confirmPasswordError;
   final VoidCallback onRegister;
   final VoidCallback onLogin;
 
@@ -12,7 +16,11 @@ class RegisterPageUI extends StatelessWidget {
     required this.usernameController,
     required this.passwordController,
     required this.confirmPasswordController,
-    required this.emailController, // <-- Add this
+    required this.emailController,
+    required this.usernameError,
+    required this.emailError,
+    required this.passwordError,
+    required this.confirmPasswordError,
     required this.onRegister,
     required this.onLogin,
     Key? key,
@@ -42,12 +50,14 @@ class RegisterPageUI extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 24),
+                // Username
                 TextField(
                   controller: usernameController,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Username",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
+                    errorText: usernameError,
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.07),
                     border: OutlineInputBorder(
@@ -56,12 +66,14 @@ class RegisterPageUI extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 16),
+                // Email
                 TextField(
-                  controller: emailController, // <-- Email field
+                  controller: emailController,
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: "Email",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
+                    errorText: emailError,
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.07),
                     border: OutlineInputBorder(
@@ -71,6 +83,7 @@ class RegisterPageUI extends StatelessWidget {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 SizedBox(height: 16),
+                // Password
                 TextField(
                   controller: passwordController,
                   obscureText: true,
@@ -78,6 +91,7 @@ class RegisterPageUI extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: "Password",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
+                    errorText: passwordError,
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.07),
                     border: OutlineInputBorder(
@@ -86,6 +100,7 @@ class RegisterPageUI extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 16),
+                // Confirm Password
                 TextField(
                   controller: confirmPasswordController,
                   obscureText: true,
@@ -93,6 +108,7 @@ class RegisterPageUI extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: "Confirm Password",
                     labelStyle: TextStyle(color: Colors.orangeAccent),
+                    errorText: confirmPasswordError,
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.07),
                     border: OutlineInputBorder(
