@@ -287,6 +287,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final passwordController = TextEditingController();
     final verifyPasswordController = TextEditingController();
 
+    String? usernameError;
+    String? emailError;
+    String? passwordError;
+
     String initialRole = userMap?['role'] ?? 'user';
     List<String> roleOptions = ['manager', 'user'];
     if (isRootAdmin) roleOptions.insert(0, 'admin');
@@ -312,6 +316,28 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) {
+          String? validateUsername(String value) {
+            if (value.trim().length < 5)
+              return "Username must be at least 5 characters";
+            return null;
+          }
+
+          String? validateEmail(String value) {
+            if (!value.contains('@') || !value.contains('.'))
+              return "Invalid email address";
+            return null;
+          }
+
+          String? validatePassword(String value) {
+            if (value.isEmpty) return null; // Password optional on edit
+            bool hasLetter = value.contains(RegExp(r'[A-Za-z]'));
+            bool hasNumber = value.contains(RegExp(r'\d'));
+            if (value.length < 5 || !hasLetter || !hasNumber) {
+              return "Password must be 5+ chars, include 1 letter & 1 number";
+            }
+            return null;
+          }
+
           return Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -351,6 +377,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           ),
                         ),
                         SizedBox(height: 16),
+
+                        // Username Field
                         TextField(
                           controller: usernameController,
                           style: TextStyle(color: Colors.white),
@@ -359,6 +387,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             labelStyle: TextStyle(color: Colors.white70),
                             filled: true,
                             fillColor: Colors.grey[800]!.withAlpha(179),
+                            errorText: usernameError,
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Colors.orangeAccent,
@@ -373,8 +402,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                          onChanged: (val) => setState(() {
+                            usernameError = validateUsername(val);
+                          }),
                         ),
                         SizedBox(height: 12),
+
+                        // Email Field
                         TextField(
                           controller: emailController,
                           style: TextStyle(color: Colors.white),
@@ -383,6 +417,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             labelStyle: TextStyle(color: Colors.white70),
                             filled: true,
                             fillColor: Colors.grey[800]!.withAlpha(179),
+                            errorText: emailError,
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: Colors.orangeAccent,
@@ -398,14 +433,34 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             ),
                           ),
                           enabled: !userIsRootAdmin || isRootAdmin,
+                          onChanged: (val) => setState(() {
+                            emailError = validateEmail(val);
+                          }),
                         ),
                         SizedBox(height: 12),
+
+                        // Password Fields
                         if (!isEdit || isCurrentUser || isRootAdmin)
                           _PasswordFields(
                             passwordController: passwordController,
                             verifyPasswordController: verifyPasswordController,
                           ),
+                        if (!isEdit || isCurrentUser || isRootAdmin)
+                          if (passwordError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                passwordError!,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+
                         SizedBox(height: 12),
+
+                        // Role Dropdown
                         DropdownButtonFormField<String>(
                           value: selectedRole,
                           decoration: InputDecoration(
@@ -446,6 +501,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                               : null,
                         ),
                         SizedBox(height: 12),
+
+                        // Status Dropdown
                         DropdownButtonFormField<String>(
                           value: selectedStatus,
                           decoration: InputDecoration(
@@ -485,7 +542,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 )
                               : null,
                         ),
+
                         SizedBox(height: 20),
+
+                        // Buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -509,25 +569,27 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 ),
                               ),
                               onPressed: () async {
-                                final username = usernameController.text.trim();
-                                final email = emailController.text.trim();
-                                final password = passwordController.text;
-                                final verifyPassword =
-                                    verifyPasswordController.text;
+                                usernameError = validateUsername(
+                                  usernameController.text,
+                                );
+                                emailError = validateEmail(
+                                  emailController.text,
+                                );
+                                passwordError = validatePassword(
+                                  passwordController.text,
+                                );
 
-                                if (username.isEmpty || email.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        "Username and email cannot be empty",
-                                      ),
-                                    ),
-                                  );
+                                setState(() {}); // Refresh errors
+
+                                if (usernameError != null ||
+                                    emailError != null ||
+                                    passwordError != null)
                                   return;
-                                }
+
                                 if (!isEdit || isCurrentUser || isRootAdmin) {
-                                  if (password.isNotEmpty &&
-                                      password != verifyPassword) {
+                                  if (passwordController.text.isNotEmpty &&
+                                      passwordController.text !=
+                                          verifyPasswordController.text) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text("Passwords do not match"),
@@ -538,13 +600,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 }
 
                                 Map<String, String> body = {
-                                  "username": username,
-                                  "email": email,
+                                  "username": usernameController.text.trim(),
+                                  "email": emailController.text.trim(),
                                   "role": selectedRole,
                                   "status": selectedStatus,
                                 };
-                                if (password.isNotEmpty)
-                                  body["password"] = password;
+                                if (passwordController.text.isNotEmpty)
+                                  body["password"] = passwordController.text;
                                 if (isEdit) {
                                   final userId =
                                       userMap?['id'] ?? userMap?['user_id'];
@@ -578,11 +640,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                   );
 
                                   if (result['success'] == true) {
-                                    // Update current username if the logged-in user edited themselves
+                                    // Update current username/email in state & SharedPreferences if editing self
                                     if (isCurrentUser) {
                                       setState(() {
-                                        currentUsername = username;
+                                        currentUsername = usernameController
+                                            .text
+                                            .trim();
                                       });
+                                      SharedPreferences prefs =
+                                          await SharedPreferences.getInstance();
+                                      await prefs.setString(
+                                        "username",
+                                        usernameController.text.trim(),
+                                      );
+                                      await prefs.setString(
+                                        "email",
+                                        emailController.text.trim(),
+                                      );
                                     }
                                     Navigator.pop(ctx, true);
                                   }
