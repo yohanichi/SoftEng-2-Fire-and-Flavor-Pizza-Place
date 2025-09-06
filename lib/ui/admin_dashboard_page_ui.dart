@@ -321,20 +321,23 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                    isCurrentUser
-                                                        ? "${user['username']} (You)"
-                                                        : user['username'],
+                                                    user['username'] +
+                                                        (isCurrentUser
+                                                            ? " (You)"
+                                                            : ""),
                                                     style: TextStyle(
-                                                      color: Colors.white70,
                                                       fontWeight: isCurrentUser
                                                           ? FontWeight.bold
                                                           : FontWeight.normal,
+                                                      color: isCurrentUser
+                                                          ? Colors.orangeAccent
+                                                          : Colors.white,
                                                     ),
                                                   ),
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                    user['role'],
+                                                    user['role'] ?? '',
                                                     style: TextStyle(
                                                       color: Colors.white70,
                                                     ),
@@ -371,10 +374,11 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                           ? Colors.green
                                                                 .withOpacity(
                                                                   0.5,
-                                                                ) // <- reduced opacity
-                                                          : Colors.red.withOpacity(
-                                                              0.5,
-                                                            ), // <- reduced opacity
+                                                                )
+                                                          : Colors.red
+                                                                .withOpacity(
+                                                                  0.5,
+                                                                ),
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             12,
@@ -394,7 +398,6 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                     ),
                                                   ),
                                                 ),
-
                                                 DataCell(
                                                   Row(
                                                     children: [

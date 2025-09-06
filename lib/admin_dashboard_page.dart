@@ -114,6 +114,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List users = [];
   bool isLoading = true;
   bool _isSidebarOpen = false;
+
   late String currentUsername;
 
   int? sortColumnIndex;
@@ -122,7 +123,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   @override
   void initState() {
     super.initState();
-    currentUsername = widget.loggedInUsername;
+    currentUsername = widget.loggedInUsername; // mutable current username
     fetchUsers();
   }
 
@@ -194,15 +195,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       ).showSnackBar(SnackBar(content: Text("Cannot delete root admin")));
       return;
     }
-
     if ((role == "admin") && !loggedInIsRootAdmin()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Only root admin can delete admins")),
       );
       return;
     }
-
-    if (username == widget.loggedInUsername) {
+    if (username == currentUsername) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Cannot delete yourself")));
@@ -253,9 +252,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     bool isEdit = userMap != null;
     bool isCurrentUser =
-        userMap != null && userMap['username'] == widget.loggedInUsername;
+        userMap != null && userMap['username'] == currentUsername;
     bool userIsRootAdmin =
-        userMap != null && (userMap['role']?.toLowerCase() == 'root_admin');
+        userMap != null && userMap['role']?.toLowerCase() == 'root_admin';
     bool isRootAdmin = loggedInIsRootAdmin();
 
     if (isEdit && userIsRootAdmin && !isRootAdmin) {
@@ -288,7 +287,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     final passwordController = TextEditingController();
     final verifyPasswordController = TextEditingController();
 
-    // Role logic
     String initialRole = userMap?['role'] ?? 'user';
     List<String> roleOptions = ['manager', 'user'];
     if (isRootAdmin) roleOptions.insert(0, 'admin');
@@ -300,17 +298,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       isRoleEditable = false;
     }
 
-    // Status logic
     String selectedStatus = userMap?['status'] ?? 'active';
     List<String> statusOptions = ['active', 'blocked'];
     bool isStatusEditable = true;
-    if (!isRootAdmin) {
-      // Admin cannot block other admins or root admins
-      if (userMap != null &&
-          (userMap['role']?.toLowerCase() == 'admin' ||
-              userMap['role']?.toLowerCase() == 'root_admin')) {
-        isStatusEditable = false;
-      }
+    if (!isRootAdmin &&
+        userMap != null &&
+        (userMap['role']?.toLowerCase() == 'admin' ||
+            userMap['role']?.toLowerCase() == 'root_admin')) {
+      isStatusEditable = false;
     }
 
     bool? saved = await showDialog(
@@ -321,20 +316,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             backgroundColor: Colors.transparent,
             insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             child: Center(
-              // Center the dialog
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 350, // <-- Adjust this value for width
-                  minWidth: 350, // optional minimum
-                ),
+                constraints: BoxConstraints(maxWidth: 350),
                 child: Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.grey[850]!.withAlpha(
-                          217,
-                        ), // 217 / 255 ≈ 0.85 opacity
+                        Colors.grey[850]!.withAlpha(217),
                         Colors.grey[900]!.withAlpha(217),
                       ],
                       begin: Alignment.topLeft,
@@ -349,7 +338,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       ),
                     ],
                   ),
-
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -369,7 +357,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           decoration: InputDecoration(
                             labelText: "Username",
                             labelStyle: TextStyle(color: Colors.white70),
-                            filled: true, // <-- this enables background fill
+                            filled: true,
                             fillColor: Colors.grey[800]!.withAlpha(179),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
@@ -386,7 +374,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             ),
                           ),
                         ),
-
                         SizedBox(height: 12),
                         TextField(
                           controller: emailController,
@@ -394,7 +381,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           decoration: InputDecoration(
                             labelText: "Email",
                             labelStyle: TextStyle(color: Colors.white70),
-                            filled: true, // <-- this enables background fill
+                            filled: true,
                             fillColor: Colors.grey[800]!.withAlpha(179),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
@@ -424,7 +411,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           decoration: InputDecoration(
                             labelText: "Role",
                             labelStyle: TextStyle(color: Colors.white70),
-                            filled: true, // <-- this enables background fill
+                            filled: true,
                             fillColor: Colors.grey[800]!.withAlpha(179),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
@@ -464,7 +451,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           decoration: InputDecoration(
                             labelText: "Status",
                             labelStyle: TextStyle(color: Colors.white70),
-                            filled: true, // <-- this enables background fill
+                            filled: true,
                             fillColor: Colors.grey[800]!.withAlpha(179),
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
@@ -522,7 +509,90 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 ),
                               ),
                               onPressed: () async {
-                                // your save logic here...
+                                final username = usernameController.text.trim();
+                                final email = emailController.text.trim();
+                                final password = passwordController.text;
+                                final verifyPassword =
+                                    verifyPasswordController.text;
+
+                                if (username.isEmpty || email.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "Username and email cannot be empty",
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                if (!isEdit || isCurrentUser || isRootAdmin) {
+                                  if (password.isNotEmpty &&
+                                      password != verifyPassword) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Passwords do not match"),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                }
+
+                                Map<String, String> body = {
+                                  "username": username,
+                                  "email": email,
+                                  "role": selectedRole,
+                                  "status": selectedStatus,
+                                };
+                                if (password.isNotEmpty)
+                                  body["password"] = password;
+                                if (isEdit) {
+                                  final userId =
+                                      userMap?['id'] ?? userMap?['user_id'];
+                                  if (userId == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("User ID is missing"),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  body["id"] = userId.toString();
+                                }
+
+                                try {
+                                  final url = isEdit
+                                      ? "$apiBase/update_user.php"
+                                      : "$apiBase/create_user.php";
+                                  final response = await http.post(
+                                    Uri.parse(url),
+                                    body: body,
+                                  );
+                                  final result = json.decode(response.body);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        result['message'] ?? "User saved",
+                                      ),
+                                    ),
+                                  );
+
+                                  if (result['success'] == true) {
+                                    // Update current username if the logged-in user edited themselves
+                                    if (isCurrentUser) {
+                                      setState(() {
+                                        currentUsername = username;
+                                      });
+                                    }
+                                    Navigator.pop(ctx, true);
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Error saving user: $e"),
+                                    ),
+                                  );
+                                }
                               },
                               child: Text(
                                 "Save",
@@ -565,7 +635,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       openUserDialog: (user) => openUserDialog(user: user),
       deleteUser: deleteUser,
       logout: () => logoutAndGoDash(context),
-      loggedInUsername: widget.loggedInUsername,
+      loggedInUsername: currentUsername, // <- updated username
       onHome: () => Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => dash()),
@@ -575,11 +645,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         context,
         MaterialPageRoute(
           builder: (_) => DashboardPage(
-            username: widget.loggedInUsername,
+            username: currentUsername,
             role: loggedInIsRootAdmin() ? 'root_admin' : 'admin',
-            userId: loggedInIsRootAdmin()
-                ? 'root_admin'
-                : widget.loggedInUsername,
+            userId: loggedInIsRootAdmin() ? 'root_admin' : currentUsername,
           ),
         ),
       ),
@@ -587,11 +655,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         context,
         MaterialPageRoute(
           builder: (_) => TaskPage(
-            username: widget.loggedInUsername,
+            username: currentUsername,
             role: loggedInIsRootAdmin() ? 'root_admin' : 'admin',
-            userId: loggedInIsRootAdmin()
-                ? 'root_admin'
-                : widget.loggedInUsername,
+            userId: loggedInIsRootAdmin() ? 'root_admin' : currentUsername,
           ),
         ),
       ),
