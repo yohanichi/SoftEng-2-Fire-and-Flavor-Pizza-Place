@@ -5,7 +5,7 @@ class EditProfilePageUI extends StatelessWidget {
   final TextEditingController passwordController;
   final TextEditingController emailController;
   final bool hidePassword;
-  final bool isSaving; // <-- New
+  final bool isSaving;
   final VoidCallback onBack;
   final VoidCallback onSave;
   final VoidCallback onTogglePassword;
@@ -15,7 +15,7 @@ class EditProfilePageUI extends StatelessWidget {
     required this.passwordController,
     required this.emailController,
     required this.hidePassword,
-    required this.isSaving, // <-- New
+    required this.isSaving,
     required this.onBack,
     required this.onSave,
     required this.onTogglePassword,
@@ -27,11 +27,11 @@ class EditProfilePageUI extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
+          // Background
           Positioned.fill(
             child: Image.asset("assets/images/chalkart.png", fit: BoxFit.cover),
           ),
-          // Gradient Overlay
+          // Overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -46,7 +46,7 @@ class EditProfilePageUI extends StatelessWidget {
               ),
             ),
           ),
-          // Centered Card
+          // Card
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -85,21 +85,21 @@ class EditProfilePageUI extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 20),
-                    // Username Field
+                    // Username
                     TextField(
                       controller: usernameController,
                       style: TextStyle(color: Colors.white),
                       decoration: _inputDecoration("Username"),
                     ),
                     SizedBox(height: 15),
-                    // Email Field
+                    // Email
                     TextField(
                       controller: emailController,
                       style: TextStyle(color: Colors.white),
                       decoration: _inputDecoration("Email"),
                     ),
                     SizedBox(height: 15),
-                    // Password Field
+                    // Password
                     TextField(
                       controller: passwordController,
                       obscureText: hidePassword,

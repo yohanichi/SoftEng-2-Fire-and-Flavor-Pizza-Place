@@ -231,24 +231,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 final email = emailController.text.trim();
                 final password = passwordController.text;
 
-                // Username validation
+                // ✅ Username validation (must be 5+ chars, no spaces, number optional)
                 final usernameValid =
-                    username.length >= 5 &&
-                    RegExp(r'[0-9]').hasMatch(username) &&
-                    !username.contains(' ');
-
+                    username.length >= 5 && !username.contains(' ');
                 if (!usernameValid) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "Username must be at least 5 characters, contain at least 1 number, and have no spaces.",
+                        "Username must be at least 5 characters and contain no spaces.",
                       ),
                     ),
                   );
                   return;
                 }
 
-                // Email validation
+                // ✅ Email validation
                 final emailValid = RegExp(
                   r'^[^@]+@[^@]+\.[^@]+',
                 ).hasMatch(email);
@@ -259,7 +256,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   return;
                 }
 
-                // Password validation (only if entered)
+                // ✅ Password validation (if entered)
                 if (password.isNotEmpty) {
                   final passwordValid =
                       password.length >= 5 &&
@@ -271,7 +268,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          "Password must be at least 5 characters, contain at least 1 letter and 1 number, and have no spaces.",
+                          "Password must be at least 5 characters, contain 1 letter & 1 number, and no spaces.",
                         ),
                       ),
                     );
@@ -279,6 +276,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   }
                 }
 
+                // ✅ Form Data
                 Map<String, String> formData = {
                   "username": username,
                   "email": email,
@@ -286,14 +284,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   "status": status,
                   "loggedInUsername": widget.loggedInUsername,
                 };
-
-                if (password.isNotEmpty) {
-                  formData["password"] = password;
-                }
-
-                if (user != null) {
-                  formData["id"] = user['id'].toString();
-                }
+                if (password.isNotEmpty) formData["password"] = password;
+                if (user != null) formData["id"] = user['id'].toString();
 
                 final url = user == null
                     ? "$apiBase/create_user.php"
@@ -330,6 +322,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     TextEditingController usernameController = TextEditingController(
       text: currentUsername,
     );
+    TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
 
     await showDialog(
@@ -342,6 +335,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             TextField(
               controller: usernameController,
               decoration: InputDecoration(labelText: "Username"),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(labelText: "Email"),
             ),
             SizedBox(height: 10),
             TextField(
@@ -359,27 +357,32 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ElevatedButton(
             onPressed: () async {
               final username = usernameController.text.trim();
+              final email = emailController.text.trim();
               final password = passwordController.text;
 
-              // Username validation
-              if (username.isNotEmpty) {
-                final usernameValid =
-                    username.length >= 5 &&
-                    RegExp(r'[0-9]').hasMatch(username) &&
-                    !username.contains(' ');
-                if (!usernameValid) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "Username must be at least 5 characters, contain at least 1 number, and have no spaces.",
-                      ),
+              // ✅ Username validation
+              if (username.isNotEmpty &&
+                  (username.length < 5 || username.contains(' '))) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "Username must be at least 5 characters and no spaces.",
                     ),
-                  );
-                  return;
-                }
+                  ),
+                );
+                return;
               }
 
-              // Password validation
+              // ✅ Email validation
+              if (email.isNotEmpty &&
+                  !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Please enter a valid email.")),
+                );
+                return;
+              }
+
+              // ✅ Password validation
               if (password.isNotEmpty) {
                 final passwordValid =
                     password.length >= 5 &&
@@ -391,7 +394,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "Password must be at least 5 characters, contain at least 1 letter and 1 number, and have no spaces.",
+                        "Password must be at least 5 characters, contain 1 letter & 1 number, and no spaces.",
                       ),
                     ),
                   );
@@ -401,6 +404,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
               Map<String, String> body = {"id": "1"}; // first admin ID
               if (username.isNotEmpty) body["username"] = username;
+              if (email.isNotEmpty) body["email"] = email;
               if (password.isNotEmpty) body["password"] = password;
 
               if (body.length == 1) {

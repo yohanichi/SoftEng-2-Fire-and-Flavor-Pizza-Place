@@ -58,6 +58,7 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString("username", data['username']);
         await prefs.setString("role", data['role']);
         await prefs.setString("id", data['id'].toString());
+        await prefs.setString("email", data['email']);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Login successful! Redirecting...")),

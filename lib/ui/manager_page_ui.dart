@@ -651,7 +651,48 @@ class _SidebarState extends State<_Sidebar> {
             label: "Logout",
             isOpen: widget.isSidebarOpen && showText,
             color: Colors.redAccent,
-            onTap: widget.onLogout,
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  title: Text(
+                    "Confirm Logout",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  content: Text(
+                    "Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(
+                        "Cancel",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        widget
+                            .onLogout(); // ✅ Now triggers only after confirmation
+                      },
+                      child: Text(
+                        "Logout",
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
             hovered: hoveredLabel == "Logout",
             onHover: (hovering) {
               setState(() => hoveredLabel = hovering ? "Logout" : null);

@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dash.dart';
-import 'ui/edit_profile_page_ui.dart'; // <-- Import the UI
+import 'ui/edit_profile_page_ui.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String currentUsername;
@@ -19,7 +19,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController passwordController;
   late TextEditingController emailController;
   bool hidePassword = true;
-  bool isSaving = false; // <-- For loading state
+  bool isSaving = false;
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     usernameController = TextEditingController(text: widget.currentUsername);
     passwordController = TextEditingController();
     emailController = TextEditingController();
-    loadEmail();
+    loadProfileData();
   }
 
   @override
@@ -38,32 +38,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  Future<void> loadEmail() async {
+  Future<void> loadProfileData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    emailController.text = prefs.getString("email") ?? "";
+    String? savedEmail = prefs.getString("email");
+    String? savedUsername = prefs.getString("username");
+
+    setState(() {
+      if (savedUsername != null && savedUsername.isNotEmpty) {
+        usernameController.text = savedUsername;
+      }
+      if (savedEmail != null && savedEmail.isNotEmpty) {
+        emailController.text = savedEmail;
+      }
+    });
   }
 
   Future<void> saveProfile() async {
-    if (usernameController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Username cannot be empty")));
-      return;
-    }
-    if (emailController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Email cannot be empty")));
+    final username = usernameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    // Username validation
+    if (username.isEmpty || username.length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Username must be at least 5 characters.")),
+      );
       return;
     }
 
-    // 🔒 Password validation (only if provided)
-    if (passwordController.text.isNotEmpty) {
-      final password = passwordController.text;
+    // Email validation
+    final emailValid = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
+    if (!emailValid) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Enter a valid email address.")));
+      return;
+    }
+
+    // Password validation (only if provided)
+    if (password.isNotEmpty) {
       final passwordValid = RegExp(
         r'^(?=.*[A-Za-z])(?=.*\d).{5,}$',
       ).hasMatch(password);
-
       if (!passwordValid) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -88,12 +104,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     Map<String, String> body = {
       "id": userId,
-      "username": usernameController.text,
-      "email": emailController.text,
+      "username": username,
+      "email": email,
     };
 
-    if (passwordController.text.isNotEmpty) {
-      body["password"] = passwordController.text;
+    if (password.isNotEmpty) {
+      body["password"] = password;
     }
 
     setState(() => isSaving = true);
@@ -113,8 +129,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
 
       if (data['success']) {
-        await prefs.setString("username", usernameController.text);
-        await prefs.setString("email", emailController.text);
+        await prefs.setString("username", username);
+        await prefs.setString("email", email);
 
         Navigator.pushReplacement(
           context,
@@ -137,7 +153,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       passwordController: passwordController,
       emailController: emailController,
       hidePassword: hidePassword,
-      isSaving: isSaving, // <-- Pass loading state
+      isSaving: isSaving,
       onBack: () => Navigator.pop(context),
       onSave: saveProfile,
       onTogglePassword: () => setState(() => hidePassword = !hidePassword),

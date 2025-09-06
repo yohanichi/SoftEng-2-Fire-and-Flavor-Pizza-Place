@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'login_page.dart';
-import 'ui/register_page_ui.dart'; // <-- import the UI
+import 'ui/register_page_ui.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -20,6 +20,9 @@ class _RegisterPageState extends State<RegisterPage> {
   String? passwordError;
   String? confirmPasswordError;
 
+  bool hidePassword = true;
+  bool hideConfirmPassword = true;
+
   Future<void> registerUser() async {
     final username = usernameController.text.trim();
     final password = passwordController.text;
@@ -35,7 +38,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     bool hasError = false;
 
-    // ✅ Username validation
+    // 🔹 Username validation
     if (username.length < 5 || username.contains(' ')) {
       setState(() {
         usernameError =
@@ -44,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
       hasError = true;
     }
 
-    // ✅ Password validation
+    // 🔹 Password validation
     final passwordValid =
         password.length >= 5 &&
         RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$').hasMatch(password) &&
@@ -58,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
       hasError = true;
     }
 
-    // ✅ Confirm password check
+    // 🔹 Confirm password
     if (password != confirmPassword) {
       setState(() {
         confirmPasswordError = "Passwords do not match.";
@@ -66,7 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
       hasError = true;
     }
 
-    // ✅ Email validation
+    // 🔹 Email validation
     final emailValid = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
     if (!emailValid) {
       setState(() {
@@ -114,12 +117,21 @@ class _RegisterPageState extends State<RegisterPage> {
       emailError: emailError,
       passwordError: passwordError,
       confirmPasswordError: confirmPasswordError,
+      hidePassword: hidePassword,
+      hideConfirmPassword: hideConfirmPassword,
+      onBack: () => Navigator.pop(context),
       onRegister: registerUser,
       onLogin: () {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => LoginPage()),
         );
+      },
+      onTogglePassword: () {
+        setState(() => hidePassword = !hidePassword);
+      },
+      onToggleConfirmPassword: () {
+        setState(() => hideConfirmPassword = !hideConfirmPassword);
       },
     );
   }
