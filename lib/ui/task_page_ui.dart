@@ -1,3 +1,4 @@
+// task_page_ui.dart
 import 'package:flutter/material.dart';
 
 class TaskPageUI extends StatelessWidget {
@@ -14,13 +15,15 @@ class TaskPageUI extends StatelessWidget {
   final VoidCallback onAddTask;
   final Function(Map) onEditTask;
   final Function(int) onDeleteTask;
-  final Function(Map) onViewTask; // NEW
+  final Function(Map) onViewTask;
   final VoidCallback onHome;
   final VoidCallback onDashboard;
   final VoidCallback? onAdminDashboard;
   final VoidCallback? onManagerPage;
   final VoidCallback? onSubModule;
   final VoidCallback onLogout;
+  final void Function(String, bool) onStatusFilterChanged;
+  final Map<String, bool> statusFilter;
 
   const TaskPageUI({
     required this.isSidebarOpen,
@@ -36,13 +39,15 @@ class TaskPageUI extends StatelessWidget {
     required this.onAddTask,
     required this.onEditTask,
     required this.onDeleteTask,
-    required this.onViewTask, // NEW
+    required this.onViewTask,
     required this.onHome,
     required this.onDashboard,
     this.onAdminDashboard,
     this.onManagerPage,
     this.onSubModule,
     required this.onLogout,
+    required this.onStatusFilterChanged,
+    required this.statusFilter,
     Key? key,
   }) : super(key: key);
 
@@ -61,6 +66,7 @@ class TaskPageUI extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
+          // Background gradient
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -74,6 +80,7 @@ class TaskPageUI extends StatelessWidget {
           ),
           Row(
             children: [
+              // Sidebar
               _Sidebar(
                 isSidebarOpen: isSidebarOpen,
                 onHome: onHome,
@@ -84,6 +91,7 @@ class TaskPageUI extends StatelessWidget {
                 onLogout: onLogout,
                 role: role,
               ),
+              // Main content
               Expanded(
                 child: Column(
                   children: [
@@ -96,8 +104,6 @@ class TaskPageUI extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [Colors.black, Colors.grey[900]!],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
                         ),
                       ),
                       child: Row(
@@ -159,74 +165,59 @@ class TaskPageUI extends StatelessWidget {
                       ),
                     ),
                     Container(height: 3, color: Colors.orange),
-                    // Summary row
+                    // Summary
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 465,
+                        horizontal: 20,
                         vertical: 15,
                       ),
                       child: Row(
                         children: [
-                          // Pending
-                          Container(
-                            margin: EdgeInsets.only(right: 12),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orangeAccent.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "Total Pending: $totalPending",
-                              style: TextStyle(
-                                color: Colors.orangeAccent,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                          _StatusBox(
+                            text: "Total Pending: $totalPending",
+                            color: Colors.orangeAccent,
+                            bgOpacity: 0.2,
                           ),
-                          // Ongoing
-                          Container(
-                            margin: EdgeInsets.only(right: 12),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blueAccent.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "Total Ongoing: $totalOngoing",
-                              style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                          _StatusBox(
+                            text: "Total Ongoing: $totalOngoing",
+                            color: Colors.blueAccent,
+                            bgOpacity: 0.2,
                           ),
-                          // Completed
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.greenAccent.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "Total Completed: $totalCompleted",
-                              style: TextStyle(
-                                color: Colors.greenAccent,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                          _StatusBox(
+                            text: "Total Completed: $totalCompleted",
+                            color: Colors.greenAccent,
+                            bgOpacity: 0.2,
                           ),
                         ],
                       ),
                     ),
-
+                    // Status filter
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Wrap(
+                        spacing: 12,
+                        children: statusFilter.keys.map((status) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: statusFilter[status],
+                                onChanged: (val) =>
+                                    onStatusFilterChanged(status, val!),
+                              ),
+                              Text(
+                                status[0].toUpperCase() + status.substring(1),
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    // DataTable
                     Expanded(
                       child: loading
                           ? Center(child: CircularProgressIndicator())
@@ -243,13 +234,6 @@ class TaskPageUI extends StatelessWidget {
                                       37,
                                     ).withOpacity(0.85),
                                     borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 8,
-                                        offset: Offset(2, 2),
-                                      ),
-                                    ],
                                   ),
                                   child: SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
@@ -268,21 +252,19 @@ class TaskPageUI extends StatelessWidget {
                                                 color: Colors.white,
                                               ),
                                             ),
-                                            onSort: (columnIndex, ascending) =>
-                                                onSort(
-                                                  (t) =>
-                                                      int.tryParse(
-                                                        t['id'].toString(),
-                                                      ) ??
-                                                      0,
-                                                  columnIndex,
-                                                  ascending,
-                                                ),
+                                            onSort: (i, asc) => onSort(
+                                              (t) =>
+                                                  int.tryParse(
+                                                    t['id'].toString(),
+                                                  ) ??
+                                                  0,
+                                              i,
+                                              asc,
+                                            ),
                                           ),
                                           DataColumn(
                                             label: Container(
-                                              width:
-                                                  250, // adjust this to widen the title column
+                                              width: 250,
                                               child: Text(
                                                 "Title",
                                                 style: TextStyle(
@@ -290,14 +272,12 @@ class TaskPageUI extends StatelessWidget {
                                                 ),
                                               ),
                                             ),
-                                            onSort: (columnIndex, ascending) =>
-                                                onSort(
-                                                  (t) => t['title'] ?? '',
-                                                  columnIndex,
-                                                  ascending,
-                                                ),
+                                            onSort: (i, asc) => onSort(
+                                              (t) => t['title'] ?? '',
+                                              i,
+                                              asc,
+                                            ),
                                           ),
-
                                           DataColumn(
                                             label: Text(
                                               "Created At",
@@ -305,14 +285,12 @@ class TaskPageUI extends StatelessWidget {
                                                 color: Colors.white,
                                               ),
                                             ),
-                                            onSort: (columnIndex, ascending) =>
-                                                onSort(
-                                                  (t) => t['created_at'] ?? '',
-                                                  columnIndex,
-                                                  ascending,
-                                                ),
+                                            onSort: (i, asc) => onSort(
+                                              (t) => t['created_at'] ?? '',
+                                              i,
+                                              asc,
+                                            ),
                                           ),
-
                                           DataColumn(
                                             label: Text(
                                               "Due Date",
@@ -320,14 +298,12 @@ class TaskPageUI extends StatelessWidget {
                                                 color: Colors.white,
                                               ),
                                             ),
-                                            onSort: (columnIndex, ascending) =>
-                                                onSort(
-                                                  (t) => t['due_date'] ?? '',
-                                                  columnIndex,
-                                                  ascending,
-                                                ),
+                                            onSort: (i, asc) => onSort(
+                                              (t) => t['due_date'] ?? '',
+                                              i,
+                                              asc,
+                                            ),
                                           ),
-
                                           DataColumn(
                                             label: Text(
                                               "Status",
@@ -335,12 +311,11 @@ class TaskPageUI extends StatelessWidget {
                                                 color: Colors.white,
                                               ),
                                             ),
-                                            onSort: (columnIndex, ascending) =>
-                                                onSort(
-                                                  (t) => t['status'] ?? '',
-                                                  columnIndex,
-                                                  ascending,
-                                                ),
+                                            onSort: (i, asc) => onSort(
+                                              (t) => t['status'] ?? '',
+                                              i,
+                                              asc,
+                                            ),
                                           ),
                                           DataColumn(
                                             label: Text(
@@ -362,11 +337,9 @@ class TaskPageUI extends StatelessWidget {
                                                   ),
                                                 ),
                                               ),
-                                              // Clickable title
                                               DataCell(
                                                 Container(
-                                                  width:
-                                                      250, // same as column width
+                                                  width: 250,
                                                   child: InkWell(
                                                     onTap: () =>
                                                         onViewTask(task),
@@ -379,13 +352,12 @@ class TaskPageUI extends StatelessWidget {
                                                             TextDecoration
                                                                 .underline,
                                                       ),
-                                                      overflow: TextOverflow
-                                                          .ellipsis, // avoids overflow
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
                                                 ),
                                               ),
-
                                               DataCell(
                                                 Text(
                                                   task['created_at'] ?? 'N/A',
@@ -394,7 +366,6 @@ class TaskPageUI extends StatelessWidget {
                                                   ),
                                                 ),
                                               ),
-
                                               DataCell(
                                                 Text(
                                                   task['due_date'] ?? 'N/A',
@@ -403,7 +374,6 @@ class TaskPageUI extends StatelessWidget {
                                                   ),
                                                 ),
                                               ),
-
                                               DataCell(
                                                 Text(
                                                   task['status'] ?? '',
@@ -457,9 +427,37 @@ class TaskPageUI extends StatelessWidget {
   }
 }
 
-// ... Sidebar code remains unchanged ...
+// Status summary box
+class _StatusBox extends StatelessWidget {
+  final String text;
+  final Color color;
+  final double bgOpacity;
 
-// Sidebar with hover support
+  const _StatusBox({
+    required this.text,
+    required this.color,
+    required this.bgOpacity,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(right: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(bgOpacity),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+// ------------------- Sidebar -------------------
 class _Sidebar extends StatefulWidget {
   final bool isSidebarOpen;
   final VoidCallback onHome;
@@ -495,9 +493,7 @@ class _SidebarState extends State<_Sidebar> {
     super.didUpdateWidget(oldWidget);
     if (widget.isSidebarOpen && !showText) {
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted && widget.isSidebarOpen) {
-          setState(() => showText = true);
-        }
+        if (mounted && widget.isSidebarOpen) setState(() => showText = true);
       });
     } else if (!widget.isSidebarOpen && showText) {
       setState(() => showText = false);
@@ -521,9 +517,8 @@ class _SidebarState extends State<_Sidebar> {
             isOpen: widget.isSidebarOpen && showText,
             onTap: widget.onHome,
             hovered: hoveredLabel == "Home",
-            onHover: (hovering) {
-              setState(() => hoveredLabel = hovering ? "Home" : null);
-            },
+            onHover: (hovering) =>
+                setState(() => hoveredLabel = hovering ? "Home" : null),
           ),
           _SidebarItem(
             imagePath: "assets/images/dashboard.png",
@@ -531,11 +526,11 @@ class _SidebarState extends State<_Sidebar> {
             isOpen: widget.isSidebarOpen && showText,
             onTap: widget.onDashboard,
             hovered: hoveredLabel == "Dashboard",
-            onHover: (hovering) {
-              setState(() => hoveredLabel = hovering ? "Dashboard" : null);
-            },
+            onHover: (hovering) =>
+                setState(() => hoveredLabel = hovering ? "Dashboard" : null),
           ),
-          if (widget.role.toLowerCase() == "admin" &&
+          if ((widget.role.toLowerCase() == "admin" ||
+                  widget.role.toLowerCase() == "root_admin") &&
               widget.onAdminDashboard != null)
             _SidebarItem(
               imagePath: "assets/images/admin.png",
@@ -543,11 +538,9 @@ class _SidebarState extends State<_Sidebar> {
               isOpen: widget.isSidebarOpen && showText,
               onTap: widget.onAdminDashboard,
               hovered: hoveredLabel == "Admin Dashboard",
-              onHover: (hovering) {
-                setState(
-                  () => hoveredLabel = hovering ? "Admin Dashboard" : null,
-                );
-              },
+              onHover: (hovering) => setState(
+                () => hoveredLabel = hovering ? "Admin Dashboard" : null,
+              ),
             ),
           if (widget.role.toLowerCase() == "manager" &&
               widget.onManagerPage != null)
@@ -557,11 +550,9 @@ class _SidebarState extends State<_Sidebar> {
               isOpen: widget.isSidebarOpen && showText,
               onTap: widget.onManagerPage,
               hovered: hoveredLabel == "Materials Records",
-              onHover: (hovering) {
-                setState(
-                  () => hoveredLabel = hovering ? "Materials Records" : null,
-                );
-              },
+              onHover: (hovering) => setState(
+                () => hoveredLabel = hovering ? "Materials Records" : null,
+              ),
             ),
           if (widget.role.toLowerCase() == "manager" &&
               widget.onSubModule != null)
@@ -570,24 +561,20 @@ class _SidebarState extends State<_Sidebar> {
               label: "Sub-Module #2",
               isOpen: widget.isSidebarOpen && showText,
               onTap: widget.onSubModule,
-              color: Colors.white,
               hovered: hoveredLabel == "Sub-Module #2",
-              onHover: (hovering) {
-                setState(
-                  () => hoveredLabel = hovering ? "Sub-Module #2" : null,
-                );
-              },
+              onHover: (hovering) => setState(
+                () => hoveredLabel = hovering ? "Sub-Module #2" : null,
+              ),
             ),
           _SidebarItem(
             imagePath: "assets/images/task.png",
             label: "Tasks",
             isOpen: widget.isSidebarOpen && showText,
-            onTap: () {}, // Disable tap since you're already on this page
-            isActive: true, // <-- Highlight when on Task page
+            onTap: () {}, // current page
+            isActive: true,
             hovered: hoveredLabel == "Tasks",
-            onHover: (hovering) {
-              setState(() => hoveredLabel = hovering ? "Tasks" : null);
-            },
+            onHover: (hovering) =>
+                setState(() => hoveredLabel = hovering ? "Tasks" : null),
           ),
           _SidebarItem(
             imagePath: "assets/images/logout.png",
@@ -624,8 +611,7 @@ class _SidebarState extends State<_Sidebar> {
                     TextButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        widget
-                            .onLogout(); // ✅ Now triggers only after confirmation
+                        widget.onLogout();
                       },
                       child: Text(
                         "Logout",
@@ -637,9 +623,8 @@ class _SidebarState extends State<_Sidebar> {
               );
             },
             hovered: hoveredLabel == "Logout",
-            onHover: (hovering) {
-              setState(() => hoveredLabel = hovering ? "Logout" : null);
-            },
+            onHover: (hovering) =>
+                setState(() => hoveredLabel = hovering ? "Logout" : null),
           ),
         ],
       ),
@@ -647,7 +632,6 @@ class _SidebarState extends State<_Sidebar> {
   }
 }
 
-// Sidebar item with hover effect
 class _SidebarItem extends StatelessWidget {
   final String imagePath;
   final String label;

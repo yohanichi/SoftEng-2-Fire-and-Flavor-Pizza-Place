@@ -325,7 +325,8 @@ class _SidebarState extends State<_Sidebar> {
               setState(() => hoveredLabel = hovering ? "Dashboard" : null);
             },
           ),
-          if (widget.currentRole.toLowerCase() == "admin" &&
+          if ((widget.currentRole.toLowerCase() == "admin" ||
+                  widget.currentRole.toLowerCase() == "root_admin") &&
               widget.onAdminDashboard != null)
             _SidebarItem(
               imagePath: "assets/images/admin.png",
@@ -339,6 +340,7 @@ class _SidebarState extends State<_Sidebar> {
                 );
               },
             ),
+
           if (widget.currentRole.toLowerCase() == "manager" &&
               widget.onManagerPage != null)
             _SidebarItem(

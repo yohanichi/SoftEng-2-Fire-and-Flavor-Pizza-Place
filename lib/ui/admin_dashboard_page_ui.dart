@@ -171,6 +171,8 @@ class AdminDashboardPageUI extends StatelessWidget {
                                         constraints: BoxConstraints(
                                           minWidth: 900,
                                         ),
+
+                                        // ... (keep the imports and class signature as is)
                                         child: DataTable(
                                           sortColumnIndex: sortColumnIndex,
                                           sortAscending: sortAscending,
@@ -246,6 +248,23 @@ class AdminDashboardPageUI extends StatelessWidget {
                                             ),
                                             DataColumn(
                                               label: Text(
+                                                "Created At",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              onSort:
+                                                  (columnIndex, ascending) =>
+                                                      onSort(
+                                                        (u) =>
+                                                            u['created_at'] ??
+                                                            '',
+                                                        columnIndex,
+                                                        ascending,
+                                                      ),
+                                            ),
+                                            DataColumn(
+                                              label: Text(
                                                 "Status",
                                                 style: TextStyle(
                                                   color: Colors.white,
@@ -260,6 +279,7 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                         ascending,
                                                       ),
                                             ),
+
                                             DataColumn(
                                               label: Text(
                                                 "Actions",
@@ -276,7 +296,20 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                   user['id'].toString(),
                                                 ) ??
                                                 0;
+                                            bool isCurrentUser =
+                                                user['username'] ==
+                                                loggedInUsername;
+
                                             return DataRow(
+                                              color:
+                                                  MaterialStateProperty.resolveWith<
+                                                    Color?
+                                                  >(
+                                                    (states) => isCurrentUser
+                                                        ? Colors.orange
+                                                              .withOpacity(0.2)
+                                                        : null,
+                                                  ),
                                               cells: [
                                                 DataCell(
                                                   Text(
@@ -288,9 +321,14 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                    user['username'],
+                                                    isCurrentUser
+                                                        ? "${user['username']} (You)"
+                                                        : user['username'],
                                                     style: TextStyle(
                                                       color: Colors.white70,
+                                                      fontWeight: isCurrentUser
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
                                                     ),
                                                   ),
                                                 ),
@@ -312,12 +350,51 @@ class AdminDashboardPageUI extends StatelessWidget {
                                                 ),
                                                 DataCell(
                                                   Text(
-                                                    user['status'] ?? 'active',
+                                                    user['created_at'] ?? '',
                                                     style: TextStyle(
                                                       color: Colors.white70,
                                                     ),
                                                   ),
                                                 ),
+                                                DataCell(
+                                                  Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          (user['status'] ??
+                                                                  'active') ==
+                                                              'active'
+                                                          ? Colors.green
+                                                                .withOpacity(
+                                                                  0.5,
+                                                                ) // <- reduced opacity
+                                                          : Colors.red.withOpacity(
+                                                              0.5,
+                                                            ), // <- reduced opacity
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      (user['status'] ??
+                                                              'active')
+                                                          .toString()
+                                                          .toUpperCase(),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+
                                                 DataCell(
                                                   Row(
                                                     children: [
@@ -443,7 +520,7 @@ class _SidebarState extends State<_Sidebar> {
             label: "Admin Dashboard",
             isOpen: widget.isSidebarOpen && showText,
             isActive: true,
-            onTap: () {},
+            onTap: () {}, // <-- currently empty
             hovered: hoveredLabel == "Admin Dashboard",
             onHover: (hovering) {
               setState(
@@ -451,6 +528,7 @@ class _SidebarState extends State<_Sidebar> {
               );
             },
           ),
+
           _SidebarItem(
             imagePath: "assets/images/task.png",
             label: "Tasks",

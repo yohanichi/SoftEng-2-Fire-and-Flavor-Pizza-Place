@@ -69,17 +69,22 @@ class _DashboardPageState extends State<DashboardPage> {
           MaterialPageRoute(builder: (_) => dash()),
         );
       },
-      onAdminDashboard: currentRole.toLowerCase() == "admin"
+      onAdminDashboard:
+          (currentRole.toLowerCase() == "admin" ||
+              currentRole.toLowerCase() == "root_admin")
           ? () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      AdminDashboardPage(loggedInUsername: currentUsername),
+                  builder: (_) => AdminDashboardPage(
+                    loggedInUsername: currentUsername,
+                    loggedInRole: currentRole, // <-- Pass the role too
+                  ),
                 ),
               );
             }
           : null,
+
       onManagerPage: currentRole.toLowerCase() == "manager"
           ? () {
               Navigator.push(

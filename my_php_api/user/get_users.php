@@ -4,15 +4,10 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Connect DB
-$conn = new mysqli("localhost", "root", "", "testdb");
-if ($conn->connect_error) {
-    echo json_encode(["success" => false, "message" => "DB connection failed"]);
-    exit;
-}
-
-// Query all users including status
-$sql = "SELECT id, username, role, status, email FROM users";
+include "../db.php";
+ini_set('display_errors', 0); // turn off HTML errors
+error_reporting(E_ALL);
+$sql = "SELECT id, username, email, role, status, created_at FROM users";
 $result = $conn->query($sql);
 
 $users = [];

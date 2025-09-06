@@ -3,9 +3,16 @@ import 'package:flutter/material.dart';
 class UserDialog extends StatefulWidget {
   final Map? user;
   final String loggedInUsername;
+  final String
+  loggedInUserRole; // Added to determine if logged-in user is root_admin
   final Function(Map<String, String>) onSave;
 
-  UserDialog({this.user, required this.loggedInUsername, required this.onSave});
+  UserDialog({
+    this.user,
+    required this.loggedInUsername,
+    required this.loggedInUserRole,
+    required this.onSave,
+  });
 
   @override
   _UserDialogState createState() => _UserDialogState();
@@ -17,57 +24,60 @@ class _UserDialogState extends State<UserDialog> {
   late TextEditingController emailController;
   String role = "user";
   String status = "active";
-  bool isFirstAdmin = false;
-  bool isLoggedInFirstAdmin = false;
-  bool isEditingOtherAdmin = false;
+
   bool isEditingSelf = false;
+  bool isEditingOtherAdmin = false;
+  bool loggedInIsRootAdmin = false;
+  bool userIsRootAdmin = false;
 
   @override
   void initState() {
     super.initState();
+
     usernameController = TextEditingController(
       text: widget.user?['username'] ?? "",
     );
     passwordController = TextEditingController();
-    emailController = TextEditingController(
-      text: widget.user?['email'] ?? "",
-    );
+    emailController = TextEditingController(text: widget.user?['email'] ?? "");
 
-    role = ["admin", "manager", "user"].contains(widget.user?['role'])
+    role =
+        [
+          "root_admin",
+          "admin",
+          "manager",
+          "user",
+        ].contains(widget.user?['role'])
         ? widget.user!['role']
         : "user";
+
     status = ["active", "blocked"].contains(widget.user?['status'])
         ? widget.user!['status']
         : "active";
 
-    int userId = int.tryParse(widget.user?['id']?.toString() ?? '0') ?? 0;
-    isFirstAdmin = userId == 1;
-    isLoggedInFirstAdmin = widget.loggedInUsername == "admin";
+    loggedInIsRootAdmin = widget.loggedInUserRole.toLowerCase() == "root_admin";
+    userIsRootAdmin = role.toLowerCase() == "root_admin";
 
     isEditingSelf = widget.loggedInUsername == widget.user?['username'];
-    isEditingOtherAdmin = role == "admin" && !isEditingSelf;
+    isEditingOtherAdmin =
+        (role.toLowerCase() == "admin" || userIsRootAdmin) && !isEditingSelf;
 
     // Ensure role is valid for current editor
     List<String> allowedRoles = [];
-    if (isLoggedInFirstAdmin) allowedRoles.add("admin");
+    if (loggedInIsRootAdmin) allowedRoles.addAll(["root_admin", "admin"]);
     allowedRoles.addAll(["manager", "user"]);
     if (!allowedRoles.contains(role)) role = allowedRoles.last;
-
-    List<String> allowedStatus = ["active", "blocked"];
-    if (!allowedStatus.contains(status)) status = allowedStatus.first;
   }
 
   Future<void> _editField(String field, String currentValue) async {
-    // Normal admins cannot edit other admins at all
-    if (!isLoggedInFirstAdmin && isEditingOtherAdmin) {
+    // Restrict edits
+    if (!loggedInIsRootAdmin && isEditingOtherAdmin) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("You cannot edit another admin")));
       return;
     }
 
-    // Normal admins cannot edit their own role/status via text field
-    if (!isLoggedInFirstAdmin &&
+    if (!loggedInIsRootAdmin &&
         isEditingSelf &&
         (field == "role" || field == "status")) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -97,9 +107,7 @@ class _UserDialogState extends State<UserDialog> {
                         hidePassword ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() {
-                          hidePassword = !hidePassword;
-                        });
+                        setState(() => hidePassword = !hidePassword);
                       },
                     )
                   : null,
@@ -138,8 +146,7 @@ class _UserDialogState extends State<UserDialog> {
   }
 
   void _saveDropdown(String field) {
-    // Restrict saving roles/statuses for normal admins
-    if (!isLoggedInFirstAdmin &&
+    if (!loggedInIsRootAdmin &&
         isEditingSelf &&
         (field == "role" || field == "status")) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -148,8 +155,7 @@ class _UserDialogState extends State<UserDialog> {
       return;
     }
 
-    // Normal admins cannot edit other admins
-    if (!isLoggedInFirstAdmin && isEditingOtherAdmin) {
+    if (!loggedInIsRootAdmin && isEditingOtherAdmin) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("You cannot edit another admin")));
@@ -171,24 +177,22 @@ class _UserDialogState extends State<UserDialog> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> availableRoles = [
-      if (isLoggedInFirstAdmin) "admin",
-      "manager",
-      "user",
-    ];
+    List<String> availableRoles = [];
+    if (loggedInIsRootAdmin) availableRoles.addAll(["root_admin", "admin"]);
+    availableRoles.addAll(["manager", "user"]);
+
     List<String> availableStatus = ["active", "blocked"];
 
     return AlertDialog(
       title: Text(
         widget.user == null
             ? "Create User"
-            : isFirstAdmin
-            ? "Edit First Admin"
+            : userIsRootAdmin
+            ? "Edit Root Admin"
             : "Edit User",
       ),
-
       content: SizedBox(
-        width: 400, // Adjust this width as needed
+        width: 400,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -201,8 +205,8 @@ class _UserDialogState extends State<UserDialog> {
                 IconButton(
                   icon: Icon(Icons.edit),
                   onPressed:
-                      (!isFirstAdmin || isLoggedInFirstAdmin) &&
-                          !(isEditingOtherAdmin && !isLoggedInFirstAdmin)
+                      (!userIsRootAdmin || loggedInIsRootAdmin) &&
+                          !(isEditingOtherAdmin && !loggedInIsRootAdmin)
                       ? () => _editField(
                           "username",
                           widget.user?['username'] ?? "",
@@ -217,7 +221,7 @@ class _UserDialogState extends State<UserDialog> {
                 Expanded(child: Text("Password: ******")),
                 IconButton(
                   icon: Icon(Icons.edit),
-                  onPressed: !(isEditingOtherAdmin && !isLoggedInFirstAdmin)
+                  onPressed: !(isEditingOtherAdmin && !loggedInIsRootAdmin)
                       ? () => _editField("password", "")
                       : null,
                 ),
@@ -230,12 +234,9 @@ class _UserDialogState extends State<UserDialog> {
                 IconButton(
                   icon: Icon(Icons.edit),
                   onPressed:
-                      (!isFirstAdmin || isLoggedInFirstAdmin) &&
-                          !(isEditingOtherAdmin && !isLoggedInFirstAdmin)
-                      ? () => _editField(
-                          "email",
-                          widget.user?['email'] ?? "",
-                        )
+                      (!userIsRootAdmin || loggedInIsRootAdmin) &&
+                          !(isEditingOtherAdmin && !loggedInIsRootAdmin)
+                      ? () => _editField("email", widget.user?['email'] ?? "")
                       : null,
                 ),
               ],
@@ -250,14 +251,14 @@ class _UserDialogState extends State<UserDialog> {
                       .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                       .toList(),
                   onChanged:
-                      (isLoggedInFirstAdmin ||
+                      (loggedInIsRootAdmin ||
                           (!isEditingOtherAdmin && !isEditingSelf))
                       ? (val) => setState(() => role = val!)
                       : null,
                 ),
                 TextButton(
                   onPressed:
-                      (isLoggedInFirstAdmin ||
+                      (loggedInIsRootAdmin ||
                           (!isEditingOtherAdmin && !isEditingSelf))
                       ? () => _saveDropdown("role")
                       : null,
@@ -265,7 +266,6 @@ class _UserDialogState extends State<UserDialog> {
                 ),
               ],
             ),
-
             // Status
             Row(
               children: [
@@ -276,14 +276,14 @@ class _UserDialogState extends State<UserDialog> {
                       .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
                   onChanged:
-                      (isLoggedInFirstAdmin ||
+                      (loggedInIsRootAdmin ||
                           (!isEditingOtherAdmin && !isEditingSelf))
                       ? (val) => setState(() => status = val!)
                       : null,
                 ),
                 TextButton(
                   onPressed:
-                      (isLoggedInFirstAdmin ||
+                      (loggedInIsRootAdmin ||
                           (!isEditingOtherAdmin && !isEditingSelf))
                       ? () => _saveDropdown("status")
                       : null,

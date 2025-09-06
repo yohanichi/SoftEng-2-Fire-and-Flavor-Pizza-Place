@@ -26,7 +26,22 @@ class MyApp extends StatelessWidget {
         '/login': (context) => SplashDecider(),
         '/dashboard': (context) =>
             DashboardPage(username: "Guest", role: "user", userId: "0"),
-        '/admin': (context) => AdminDashboardPage(loggedInUsername: "admin"),
+        '/admin': (context) {
+          // Load current logged-in user from SharedPreferences
+          return FutureBuilder<SharedPreferences>(
+            future: SharedPreferences.getInstance(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return CircularProgressIndicator();
+              final prefs = snapshot.data!;
+              final username = prefs.getString('username') ?? 'guest';
+              final role = prefs.getString('role') ?? 'user';
+              return AdminDashboardPage(
+                loggedInUsername: username,
+                loggedInRole: role,
+              );
+            },
+          );
+        },
       },
     );
   }
@@ -71,11 +86,14 @@ class _SplashDeciderState extends State<SplashDecider> {
     }
 
     // Redirect logic
-    if (role == "admin" && username != "admin") {
-      // Non-first admins go to Admin Panel
-      return AdminDashboardPage(loggedInUsername: username!);
+    if (role == "root_admin" || (role == "admin" && username != "admin")) {
+      // Root admin and normal admins go to AdminDashboard
+      return AdminDashboardPage(
+        loggedInUsername: username!,
+        loggedInRole: role!,
+      );
     } else {
-      // First admin or other roles go to DashboardPage
+      // Other users go to their dashboard
       return DashboardPage(username: username!, role: role!, userId: userId!);
     }
   }

@@ -3,8 +3,10 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
-include "../db.php";
 
+include "../db.php";
+ini_set('display_errors', 0); // turn off HTML errors
+error_reporting(E_ALL);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -18,8 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Only first admin can assign admin
-    if ($role === 'admin' && $loggedInUsername !== 'admin') {
+    // Only root_admin can assign admin or root_admin
+    $stmtCheck = $conn->prepare("SELECT role FROM users WHERE username=?");
+    $stmtCheck->bind_param("s", $loggedInUsername);
+    $stmtCheck->execute();
+    $result = $stmtCheck->get_result();
+    $loggedInUser = $result->fetch_assoc();
+
+    if (!in_array($role, ['manager', 'user']) && $loggedInUser['role'] !== 'root_admin') {
         $role = 'user';
     }
 

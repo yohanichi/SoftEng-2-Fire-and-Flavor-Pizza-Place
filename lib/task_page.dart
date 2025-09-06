@@ -1,3 +1,4 @@
+// task_page.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -21,7 +22,7 @@ class TaskPage extends StatefulWidget {
 
 class _TaskPageState extends State<TaskPage> {
   final String apiBase =
-      "http://192.168.254.115/my_application/my_php_api/tasks/tasks.php";
+      "http://localhost/my_application/my_php_api/tasks/tasks.php";
   List tasks = [];
   bool loading = true;
   bool _isSidebarOpen = false;
@@ -30,10 +31,23 @@ class _TaskPageState extends State<TaskPage> {
   bool sortAscending = true;
   final List<String> statusOptions = ['pending', 'ongoing', 'completed'];
 
+  // Status filter
+  Map<String, bool> statusFilter = {
+    'All': true,
+    'pending': true,
+    'ongoing': true,
+    'completed': true,
+  };
+
   @override
   void initState() {
     super.initState();
     fetchTasks();
+  }
+
+  List get filteredTasks {
+    if (statusFilter['All'] == true) return tasks;
+    return tasks.where((t) => statusFilter[t['status']] == true).toList();
   }
 
   Future<void> fetchTasks() async {
@@ -69,6 +83,28 @@ class _TaskPageState extends State<TaskPage> {
     });
   }
 
+  void onStatusFilterChanged(String status, bool value) {
+    setState(() {
+      if (status == 'All') {
+        // Toggle all
+        statusFilter.forEach((key, _) {
+          statusFilter[key] = value;
+        });
+      } else {
+        statusFilter[status] = value;
+
+        // Update 'All' checkbox
+        if (!value) {
+          statusFilter['All'] = false;
+        } else if (statusFilter['pending']! &&
+            statusFilter['ongoing']! &&
+            statusFilter['completed']!) {
+          statusFilter['All'] = true;
+        }
+      }
+    });
+  }
+
   Future<void> addOrEditTask({Map? task}) async {
     TextEditingController titleController = TextEditingController(
       text: task?['title'] ?? '',
@@ -89,10 +125,7 @@ class _TaskPageState extends State<TaskPage> {
       builder: (_) => StatefulBuilder(
         builder: (context, setState) => Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: 600,
-              maxWidth: 600, // Fixed width
-            ),
+            constraints: BoxConstraints(minWidth: 600, maxWidth: 600),
             child: Dialog(
               backgroundColor: Color.fromARGB(
                 255,
@@ -108,17 +141,15 @@ class _TaskPageState extends State<TaskPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Dialog title
                     Text(
                       task == null ? "Add Task" : "Edit Task",
                       style: TextStyle(
                         color: Colors.orangeAccent,
                         fontWeight: FontWeight.bold,
-                        fontSize: 22, // Enlarged title
+                        fontSize: 22,
                       ),
                     ),
                     SizedBox(height: 16),
-                    // Title input
                     TextField(
                       controller: titleController,
                       style: TextStyle(color: Colors.white),
@@ -136,7 +167,6 @@ class _TaskPageState extends State<TaskPage> {
                       ),
                     ),
                     SizedBox(height: 12),
-                    // Description input
                     TextField(
                       controller: descriptionController,
                       style: TextStyle(color: Colors.white),
@@ -155,16 +185,12 @@ class _TaskPageState extends State<TaskPage> {
                         ),
                       ),
                     ),
-                    // Due Date input with fixed width
                     SizedBox(height: 12),
-
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.end, // align to the right
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        // Due Date field
                         SizedBox(
-                          width: 150, // fixed width
+                          width: 150,
                           child: TextField(
                             controller: dueDateController,
                             readOnly: true,
@@ -205,10 +231,9 @@ class _TaskPageState extends State<TaskPage> {
                             },
                           ),
                         ),
-                        SizedBox(width: 16), // spacing between fields
-                        // Status dropdown
+                        SizedBox(width: 16),
                         SizedBox(
-                          width: 150, // fixed width
+                          width: 150,
                           child: DropdownButtonFormField<String>(
                             value: status,
                             isExpanded: true,
@@ -244,7 +269,6 @@ class _TaskPageState extends State<TaskPage> {
                         ),
                       ],
                     ),
-
                     SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -338,7 +362,7 @@ class _TaskPageState extends State<TaskPage> {
       username: widget.username,
       role: widget.role,
       userId: widget.userId,
-      tasks: tasks,
+      tasks: filteredTasks, // <-- filtered by status
       loading: loading,
       sortColumnIndex: sortColumnIndex,
       sortAscending: sortAscending,
@@ -346,7 +370,6 @@ class _TaskPageState extends State<TaskPage> {
       onAddTask: onAddTask,
       onEditTask: onEditTask,
       onDeleteTask: onDeleteTask,
-      // NEW callback for viewing a task
       onViewTask: (task) {
         showDialog(
           context: context,
@@ -356,13 +379,11 @@ class _TaskPageState extends State<TaskPage> {
               borderRadius: BorderRadius.circular(16),
             ),
             content: SizedBox(
-              width: 500, // <-- Adjust width here
+              width: 500,
               child: SingleChildScrollView(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
                     Text(
                       "Title:",
                       style: TextStyle(
@@ -376,14 +397,13 @@ class _TaskPageState extends State<TaskPage> {
                       task['title'] ?? '',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 22, // Enlarged title
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 8),
                     Divider(color: Colors.orangeAccent),
                     SizedBox(height: 8),
-                    // Description
                     Text(
                       "Description:",
                       style: TextStyle(
@@ -413,7 +433,6 @@ class _TaskPageState extends State<TaskPage> {
           ),
         );
       },
-
       onHome: onHome,
       onDashboard: () {
         Navigator.pushReplacement(
@@ -427,12 +446,16 @@ class _TaskPageState extends State<TaskPage> {
           ),
         );
       },
-      onAdminDashboard: widget.role.toLowerCase() == "admin"
+      onAdminDashboard:
+          (widget.role.toLowerCase() == "admin" ||
+              widget.role.toLowerCase() == "root_admin")
           ? () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    AdminDashboardPage(loggedInUsername: widget.username),
+                builder: (_) => AdminDashboardPage(
+                  loggedInUsername: widget.username,
+                  loggedInRole: widget.role,
+                ),
               ),
             )
           : null,
@@ -458,6 +481,10 @@ class _TaskPageState extends State<TaskPage> {
           (route) => false,
         );
       },
+
+      // ✅ NEW: status filter
+      onStatusFilterChanged: onStatusFilterChanged,
+      statusFilter: statusFilter,
     );
   }
 }
