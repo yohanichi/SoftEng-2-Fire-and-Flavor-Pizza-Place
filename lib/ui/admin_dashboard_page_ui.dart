@@ -447,7 +447,7 @@ class _SidebarState extends State<_Sidebar> {
             label: "Admin Dashboard",
             isOpen: widget.isSidebarOpen && showText,
             isActive: true,
-            onTap: null,
+            onTap: () {},
             hovered: hoveredLabel == "Admin Dashboard",
             onHover: (hovering) {
               setState(

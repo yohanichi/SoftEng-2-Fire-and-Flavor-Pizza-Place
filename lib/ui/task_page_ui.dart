@@ -431,7 +431,7 @@ class _SidebarState extends State<_Sidebar> {
             imagePath: "assets/images/task.png",
             label: "Tasks",
             isOpen: widget.isSidebarOpen && showText,
-            onTap: null, // Disable tap since you're already on this page
+            onTap: () {}, // Disable tap since you're already on this page
             isActive: true, // <-- Highlight when on Task page
             hovered: hoveredLabel == "Tasks",
             onHover: (hovering) {

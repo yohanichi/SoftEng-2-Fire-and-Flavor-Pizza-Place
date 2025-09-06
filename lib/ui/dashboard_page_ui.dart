@@ -318,8 +318,8 @@ class _SidebarState extends State<_Sidebar> {
             imagePath: "assets/images/dashboard.png",
             label: "Dashboard",
             isOpen: widget.isSidebarOpen && showText,
-            onTap: widget.onLogout,
             isActive: true,
+            onTap: () {},
             hovered: hoveredLabel == "Dashboard",
             onHover: (hovering) {
               setState(() => hoveredLabel = hovering ? "Dashboard" : null);
