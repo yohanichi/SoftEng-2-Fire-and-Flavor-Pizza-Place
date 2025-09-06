@@ -169,44 +169,25 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> openUserDialog({Map? user}) async {
-    // Precompute if logged-in user is first admin
-    final bool isFirstAdminLoggedIn = users.any(
-      (u) =>
-          u['username'] == widget.loggedInUsername &&
-          (u['id'] == 1 || u['id'].toString() == "1"),
-    );
+    bool isEditingUsername = user == null;
+    bool isEditingEmail = user == null;
+    bool isEditingPassword = user == null;
+    bool showPassword = false;
+    String? usernameError;
+    String? emailError;
+    String? passwordError;
 
-    // Controllers (created once)
     final TextEditingController usernameController = TextEditingController(
       text: user?['username'] ?? '',
     );
-    final TextEditingController passwordController = TextEditingController();
     final TextEditingController emailController = TextEditingController(
       text: user?['email'] ?? '',
     );
+    final TextEditingController passwordController = TextEditingController();
 
-    // Precompute role and status
-    String role = user?['role']?.toLowerCase() ?? 'user';
-    String status = user?['status']?.toLowerCase() ?? 'active';
-
-    List<String> roles = ["manager", "user"];
-
-    if (user != null) {
-      // Editing user
-      if (user['id'] == 1) {
-        // First admin: only admin role and active status
-        roles = ["admin"];
-        role = "admin";
-        status = "active";
-      } else if (isFirstAdminLoggedIn) {
-        // Logged-in first admin can assign admin
-        roles.insert(0, "admin");
-      }
-    } else {
-      // Adding new user
-      if (isFirstAdminLoggedIn) roles.insert(0, "admin");
-    }
-
+    String role = user?['role'] ?? 'user';
+    String status = user?['status'] ?? 'active';
+    List<String> roles = ["admin", "manager", "user"];
     List<String> statuses = ["active", "blocked"];
 
     await showDialog(
@@ -226,55 +207,159 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch, // full-width fields
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Username
-                  TextField(
-                    controller: usernameController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Username",
-                      labelStyle: TextStyle(color: Colors.orangeAccent),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  // Email
-                  TextField(
-                    controller: emailController,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      labelStyle: TextStyle(color: Colors.orangeAccent),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  // Password
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      labelStyle: TextStyle(color: Colors.orangeAccent),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  // Role & Status Row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end, // right align
                     children: [
-                      // Role Dropdown
+                      Expanded(
+                        child: TextField(
+                          controller: usernameController,
+                          enabled: user == null ? true : isEditingUsername,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color.fromARGB(255, 54, 54, 54),
+                            labelText: "Username",
+                            labelStyle: TextStyle(color: Colors.orangeAccent),
+                            errorText: usernameError,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (user != null) // show edit button only when editing
+                        IconButton(
+                          icon: Icon(
+                            isEditingUsername ? Icons.check : Icons.edit,
+                            color: Colors.orangeAccent,
+                          ),
+                          onPressed: () {
+                            setState(
+                              () => isEditingUsername = !isEditingUsername,
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+
+                  // Email
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: emailController,
+                          enabled: user == null ? true : isEditingEmail,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color.fromARGB(255, 54, 54, 54),
+                            labelText: "Email",
+                            labelStyle: TextStyle(color: Colors.orangeAccent),
+                            errorText: emailError,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (user != null) // show edit button only when editing
+                        IconButton(
+                          icon: Icon(
+                            isEditingEmail ? Icons.check : Icons.edit,
+                            color: Colors.orangeAccent,
+                          ),
+                          onPressed: () {
+                            setState(() => isEditingEmail = !isEditingEmail);
+                          },
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+
+                  // Password
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: passwordController,
+                          obscureText: !showPassword,
+                          style: TextStyle(color: Colors.white),
+                          enabled: user == null ? true : isEditingPassword,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color.fromARGB(255, 54, 54, 54),
+                            labelText: "Password",
+                            labelStyle: TextStyle(color: Colors.orangeAccent),
+                            errorText: passwordError,
+                            hintText: user == null
+                                ? "Enter password"
+                                : isEditingPassword
+                                ? "Enter new password"
+                                : "********",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                showPassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.white70,
+                              ),
+                              onPressed: () {
+                                setState(() => showPassword = !showPassword);
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (user != null) // show edit button only when editing
+                        IconButton(
+                          icon: Icon(
+                            isEditingPassword ? Icons.check : Icons.edit,
+                            color: Colors.orangeAccent,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              isEditingPassword = !isEditingPassword;
+                              if (isEditingPassword) {
+                                passwordController.clear();
+                              } else {
+                                showPassword = false;
+                              }
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+
+                  // Role & Status (unchanged)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Container(
-                        width: 150, // narrower width
+                        width: 150,
                         child: DropdownButtonFormField<String>(
-                          value: roles.contains(role) ? role : roles[0],
+                          value: role,
                           dropdownColor: Colors.grey[900],
                           decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color.fromARGB(255, 54, 54, 54),
                             labelText: "Role",
                             labelStyle: TextStyle(color: Colors.orangeAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
                             contentPadding: EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: 12,
                               vertical: 4,
                             ),
                           ),
@@ -294,18 +379,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                           },
                         ),
                       ),
-                      SizedBox(width: 20),
-                      // Status Dropdown
+                      SizedBox(height: 12),
                       Container(
-                        width: 150, // narrower width
+                        width: 150,
                         child: DropdownButtonFormField<String>(
                           value: status,
                           dropdownColor: Colors.grey[900],
                           decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color.fromARGB(255, 54, 54, 54),
                             labelText: "Status",
                             labelStyle: TextStyle(color: Colors.orangeAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
                             contentPadding: EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: 12,
                               vertical: 4,
                             ),
                           ),
@@ -331,7 +421,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
             ),
           ),
-
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -343,8 +432,91 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 foregroundColor: Colors.black,
               ),
               onPressed: () async {
-                // Save logic unchanged
+                setState(() {
+                  usernameError = null;
+                  emailError = null;
+                  passwordError = null;
+                });
+
+                final username = usernameController.text.trim();
+                final email = emailController.text.trim();
+                final password = passwordController.text;
+
+                bool hasError = false;
+
+                // Username validation
+                if (username.length < 5) {
+                  setState(
+                    () => usernameError =
+                        "Username must be at least 5 characters.",
+                  );
+                  hasError = true;
+                }
+
+                // Email validation
+                final emailValid = RegExp(
+                  r'^[^@]+@[^@]+\.[^@]+',
+                ).hasMatch(email);
+                if (!emailValid) {
+                  setState(
+                    () => emailError = "Please enter a valid email address.",
+                  );
+                  hasError = true;
+                }
+
+                // Password validation (only when new user OR editing with new password)
+                if (user == null || password.isNotEmpty) {
+                  final passwordValid = RegExp(
+                    r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,}$',
+                  ).hasMatch(password);
+                  if (!passwordValid) {
+                    setState(
+                      () => passwordError =
+                          "Password must be at least 5 characters, contain 1 letter and 1 number.",
+                    );
+                    hasError = true;
+                  }
+                }
+
+                if (hasError) return;
+
+                // Build form data
+                Map<String, String> formData = {
+                  "username": username,
+                  "email": email,
+                  "role": role,
+                  "status": status,
+                };
+                if (password.isNotEmpty) {
+                  formData["password"] = password;
+                }
+
+                try {
+                  final response = await http.post(
+                    Uri.parse(
+                      user == null
+                          ? "$apiBase/create_user.php"
+                          : "$apiBase/update_user.php",
+                    ),
+                    body: user == null
+                        ? formData
+                        : {"id": user['id'].toString(), ...formData},
+                  );
+
+                  final result = json.decode(response.body);
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(result['message'])));
+
+                  fetchUsers();
+                  Navigator.pop(ctx);
+                } catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text("Save failed: $e")));
+                }
               },
+
               child: Text("Save"),
             ),
           ],
