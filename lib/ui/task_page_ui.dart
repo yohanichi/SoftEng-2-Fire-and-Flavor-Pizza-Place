@@ -14,6 +14,7 @@ class TaskPageUI extends StatelessWidget {
   final VoidCallback onAddTask;
   final Function(Map) onEditTask;
   final Function(int) onDeleteTask;
+  final Function(Map) onViewTask; // NEW
   final VoidCallback onHome;
   final VoidCallback onDashboard;
   final VoidCallback? onAdminDashboard;
@@ -35,6 +36,7 @@ class TaskPageUI extends StatelessWidget {
     required this.onAddTask,
     required this.onEditTask,
     required this.onDeleteTask,
+    required this.onViewTask, // NEW
     required this.onHome,
     required this.onDashboard,
     this.onAdminDashboard,
@@ -46,6 +48,16 @@ class TaskPageUI extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int totalPending = tasks
+        .where((t) => t['status'] == 'pending')
+        .length;
+    final int totalOngoing = tasks
+        .where((t) => t['status'] == 'ongoing')
+        .length;
+    final int totalCompleted = tasks
+        .where((t) => t['status'] == 'completed')
+        .length;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -72,10 +84,10 @@ class TaskPageUI extends StatelessWidget {
                 onLogout: onLogout,
                 role: role,
               ),
-              // Main content
               Expanded(
                 child: Column(
                   children: [
+                    // Top bar
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20,
@@ -147,6 +159,74 @@ class TaskPageUI extends StatelessWidget {
                       ),
                     ),
                     Container(height: 3, color: Colors.orange),
+                    // Summary row
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 465,
+                        vertical: 15,
+                      ),
+                      child: Row(
+                        children: [
+                          // Pending
+                          Container(
+                            margin: EdgeInsets.only(right: 12),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "Total Pending: $totalPending",
+                              style: TextStyle(
+                                color: Colors.orangeAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          // Ongoing
+                          Container(
+                            margin: EdgeInsets.only(right: 12),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "Total Ongoing: $totalOngoing",
+                              style: TextStyle(
+                                color: Colors.blueAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          // Completed
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.greenAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "Total Completed: $totalCompleted",
+                              style: TextStyle(
+                                color: Colors.greenAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     Expanded(
                       child: loading
                           ? Center(child: CircularProgressIndicator())
@@ -200,10 +280,14 @@ class TaskPageUI extends StatelessWidget {
                                                 ),
                                           ),
                                           DataColumn(
-                                            label: Text(
-                                              "Title",
-                                              style: TextStyle(
-                                                color: Colors.white,
+                                            label: Container(
+                                              width:
+                                                  250, // adjust this to widen the title column
+                                              child: Text(
+                                                "Title",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                             ),
                                             onSort: (columnIndex, ascending) =>
@@ -213,6 +297,37 @@ class TaskPageUI extends StatelessWidget {
                                                   ascending,
                                                 ),
                                           ),
+
+                                          DataColumn(
+                                            label: Text(
+                                              "Created At",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            onSort: (columnIndex, ascending) =>
+                                                onSort(
+                                                  (t) => t['created_at'] ?? '',
+                                                  columnIndex,
+                                                  ascending,
+                                                ),
+                                          ),
+
+                                          DataColumn(
+                                            label: Text(
+                                              "Due Date",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            onSort: (columnIndex, ascending) =>
+                                                onSort(
+                                                  (t) => t['due_date'] ?? '',
+                                                  columnIndex,
+                                                  ascending,
+                                                ),
+                                          ),
+
                                           DataColumn(
                                             label: Text(
                                               "Status",
@@ -247,14 +362,48 @@ class TaskPageUI extends StatelessWidget {
                                                   ),
                                                 ),
                                               ),
+                                              // Clickable title
+                                              DataCell(
+                                                Container(
+                                                  width:
+                                                      250, // same as column width
+                                                  child: InkWell(
+                                                    onTap: () =>
+                                                        onViewTask(task),
+                                                    child: Text(
+                                                      task['title'] ?? '',
+                                                      style: TextStyle(
+                                                        color:
+                                                            Colors.blueAccent,
+                                                        decoration:
+                                                            TextDecoration
+                                                                .underline,
+                                                      ),
+                                                      overflow: TextOverflow
+                                                          .ellipsis, // avoids overflow
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+
                                               DataCell(
                                                 Text(
-                                                  task['title'] ?? '',
+                                                  task['created_at'] ?? 'N/A',
                                                   style: TextStyle(
                                                     color: Colors.white70,
                                                   ),
                                                 ),
                                               ),
+
+                                              DataCell(
+                                                Text(
+                                                  task['due_date'] ?? 'N/A',
+                                                  style: TextStyle(
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ),
+
                                               DataCell(
                                                 Text(
                                                   task['status'] ?? '',
@@ -307,6 +456,8 @@ class TaskPageUI extends StatelessWidget {
     );
   }
 }
+
+// ... Sidebar code remains unchanged ...
 
 // Sidebar with hover support
 class _Sidebar extends StatefulWidget {

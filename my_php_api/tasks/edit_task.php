@@ -10,7 +10,9 @@ $task_id = $_POST['id'] ?? '';
 $title = $_POST['title'] ?? '';
 $description = $_POST['description'] ?? '';
 $due_date = $_POST['due_date'] ?? '';
-$status = $_POST['status'] ?? '';
+$status = $_POST['status'] ?? 'pending'; // can be 'pending', 'ongoing', 'completed'
+
+
 // Fetch tasks
 $sql = "SELECT id, title, description, status FROM tasks WHERE user_id = ?";
 
