@@ -31,6 +31,45 @@ class _dashState extends State<dash> {
     });
   }
 
+  /// 🔹 Unified logout confirmation dialog
+  Future<bool> _showLogoutDialog(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Colors.black87,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+              side: BorderSide(color: Colors.white.withOpacity(0.2), width: 1),
+            ),
+            title: Text(
+              "Confirm Logout",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              "Are you sure you want to log out?",
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text("Cancel", style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(
+                  "Logout",
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return DashPageUI(
@@ -71,13 +110,22 @@ class _dashState extends State<dash> {
           );
           _loadUser();
         } else if (value == "logout") {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.clear();
-          setState(() {
-            username = null;
-            role = null;
-            userId = null;
-          });
+          final shouldLogout = await _showLogoutDialog(context);
+
+          if (shouldLogout) {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            await prefs.clear();
+            setState(() {
+              username = null;
+              role = null;
+              userId = null;
+            });
+
+            // Optional: show snackbar after logout
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text("Logged out successfully")));
+          }
         }
       },
     );

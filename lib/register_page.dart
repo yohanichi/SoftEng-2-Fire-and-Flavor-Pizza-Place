@@ -90,10 +90,18 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (data['success'].toString() == "true" ||
           data['success'].toString() == "1") {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => LoginPage()),
+        // ✅ Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Registration successful! Redirecting...")),
         );
+
+        // Wait 2 seconds before redirecting
+        Future.delayed(Duration(seconds: 1), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => LoginPage()),
+          );
+        });
       } else {
         setState(() {
           usernameError = data['message'] ?? "Registration failed";
