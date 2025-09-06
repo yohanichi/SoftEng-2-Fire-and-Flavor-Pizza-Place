@@ -14,8 +14,7 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   late TextEditingController usernameController;
   late TextEditingController passwordController;
-  final String apiBase =
-      "http://192.168.254.115/my_application/my_php_api/user";
+  final String apiBase = "http://localhost/my_application/my_php_api/user";
 
   @override
   void initState() {
