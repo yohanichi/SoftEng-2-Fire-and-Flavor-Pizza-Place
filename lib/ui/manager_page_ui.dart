@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../manager_page.dart';
 
 class ManagerPageUI extends StatelessWidget {
   final bool isSidebarOpen;

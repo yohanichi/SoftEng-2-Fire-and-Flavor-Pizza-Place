@@ -311,32 +311,6 @@ class _TaskPageState extends State<TaskPage> {
     if (data['success']) fetchTasks();
   }
 
-  Widget _buildSortableColumn(String label) {
-    bool isSorted = sortBy == label;
-    return InkWell(
-      onTap: () => sortTasks(label),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isSorted ? FontWeight.bold : FontWeight.normal,
-              color: Colors.white,
-            ),
-          ),
-          if (isSorted)
-            Text(
-              ascending ? " ▲" : " ▼",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.orangeAccent,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   void toggleSidebar() {
     setState(() {
       _isSidebarOpen = !_isSidebarOpen;

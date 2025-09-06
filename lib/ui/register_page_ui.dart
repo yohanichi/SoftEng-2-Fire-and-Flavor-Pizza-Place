@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../login_page.dart';
 
 class RegisterPageUI extends StatelessWidget {
   final TextEditingController usernameController;
