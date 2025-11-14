@@ -403,11 +403,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                     ),
                   ),
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.orange),
-                    onPressed: _fetchLogs,
-                    tooltip: "Refresh",
-                  ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
