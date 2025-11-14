@@ -21,7 +21,6 @@ class Sidebar extends StatefulWidget {
   final VoidCallback onLogout;
   final String activePage;
   final VoidCallback? toggleSidebar;
-  final VoidCallback? onVouchers;
 
   const Sidebar({
     required this.isSidebarOpen,
@@ -44,8 +43,6 @@ class Sidebar extends StatefulWidget {
     required this.onLogout,
     required this.activePage,
     this.toggleSidebar,
-    this.onVouchers,
-
     Key? key,
   }) : super(key: key);
 
@@ -82,7 +79,6 @@ class _SidebarState extends State<Sidebar> {
     "expenses": {"label": "Expenses", "icon": "assets/images/expenses.png"},
     "tasks": {"label": "Tasks", "icon": "assets/images/task.png"},
     "addons": {"label": "Addons", "icon": "assets/images/addon.png"},
-    "voucher": {"label": "Vouchers", "icon": "assets/images/voucher.png"},
   };
 
   @override
@@ -311,19 +307,6 @@ class _SidebarState extends State<Sidebar> {
               gradientColors: gradientColors,
               onHover: (hovering) =>
                   setState(() => hoveredLabel = hovering ? "Expenses" : null),
-            ),
-          if ((widget.role.toLowerCase() == "manager") &&
-              widget.onVouchers != null)
-            _SidebarItem(
-              imagePath: "assets/images/voucher.png",
-              label: "Vouchers",
-              isOpen: widget.isSidebarOpen && showText,
-              onTap: widget.onVouchers,
-              hovered: hoveredLabel == "Vouchers",
-              isActive: widget.activePage == "voucher",
-              gradientColors: gradientColors,
-              onHover: (hovering) =>
-                  setState(() => hoveredLabel = hovering ? "Vouchers" : null),
             ),
 
           _SidebarItem(

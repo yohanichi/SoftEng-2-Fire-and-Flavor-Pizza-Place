@@ -10,7 +10,6 @@ import '../sales/sales_page.dart';
 import '../expenses/expenses_page.dart';
 import 'show_order_popup.dart';
 import 'orders_popup.dart';
-import '../vouchers/create_voucher.dart';
 
 class PizzaDashboardPage extends StatefulWidget {
   final bool isSidebarOpen;
@@ -175,7 +174,6 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                 onDashboard: () {},
                 onTaskPage: widget.onTaskPage ?? () => _switchModule("tasks"),
                 onAdminDashboard: widget.onAdminDashboard,
-
                 onMaterials: () {
                   Navigator.push(
                     context,
@@ -190,7 +188,6 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                     ),
                   );
                 },
-
                 onInventory: () {
                   if (widget.currentRole.toLowerCase() == "manager") {
                     Navigator.push(
@@ -210,7 +207,6 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                     _showAccessDeniedDialog(context, "Inventory");
                   }
                 },
-
                 onMenu: () {
                   Navigator.push(
                     context,
@@ -225,7 +221,6 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                     ),
                   );
                 },
-
                 onSales: () {
                   if (widget.currentRole.toLowerCase() == "manager") {
                     Navigator.push(
@@ -245,7 +240,6 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                     _showAccessDeniedDialog(context, "Sales");
                   }
                 },
-
                 onExpenses: () {
                   if (widget.currentRole.toLowerCase() == "manager") {
                     Navigator.push(
@@ -265,27 +259,6 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                     _showAccessDeniedDialog(context, "Expenses");
                   }
                 },
-
-                // ✅ NEW — Voucher Page
-                onVouchers: () {
-                  if (widget.currentRole.toLowerCase() == "manager") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => VoucherPage(
-                          userId: widget.userId,
-                          username: widget.currentUsername,
-                          role: widget.currentRole,
-                          isSidebarOpen: widget.isSidebarOpen,
-                          toggleSidebar: widget.toggleSidebar,
-                        ),
-                      ),
-                    );
-                  } else {
-                    _showAccessDeniedDialog(context, "Vouchers");
-                  }
-                },
-
                 username: widget.currentUsername,
                 role: widget.currentRole,
                 userId: widget.userId,

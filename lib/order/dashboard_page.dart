@@ -12,7 +12,6 @@ import '../menu_management/menu_management_page.dart';
 import 'dashboard_page_ui.dart';
 import '../inventory/inventory_page.dart';
 import '../config/api_config.dart';
-import '../vouchers/create_voucher.dart';
 
 class DashboardPage extends StatefulWidget {
   final String username;
@@ -181,22 +180,6 @@ class _DashboardPageState extends State<DashboardPage> {
           context,
           MaterialPageRoute(
             builder: (_) => TaskPage(
-              userId: userId,
-              username: currentUsername,
-              role: currentRole,
-              isSidebarOpen: widget.isSidebarOpen,
-              toggleSidebar: widget.toggleSidebar,
-            ),
-          ),
-        );
-        break;
-
-      // ✅ NEW: VOUCHER PAGE
-      case "voucher":
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => VoucherPage(
               userId: userId,
               username: currentUsername,
               role: currentRole,
