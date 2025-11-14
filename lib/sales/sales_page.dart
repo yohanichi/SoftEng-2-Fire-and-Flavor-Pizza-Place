@@ -14,6 +14,7 @@ import '../order/dashboard_page.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
+import 'showTotalIncomePopup.dart';
 
 class SalesContent extends StatefulWidget {
   final String userId;
@@ -770,10 +771,29 @@ class _SalesContentState extends State<SalesContent> {
                             color: Colors.orange,
                           ),
                         ),
+
+                        Spacer(), // <-- pushes the button to the far right
+
+                        ElevatedButton(
+                          onPressed: () {
+                            showTotalIncomePopup(context, filteredOrders);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                          ),
+                          child: const Text(
+                            "Total Income",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 10),
 
                   // Orders List + Floating Print Button

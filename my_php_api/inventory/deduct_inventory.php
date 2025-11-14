@@ -68,11 +68,11 @@ try {
         $stmt->close();
     }
 
-    // --- 4. Deduct from inventory_log FIFO and create OUT entries ---
+    // --- 4. Deduct from inventory_log FIFO and create OUT entries with positive cost ---
     foreach ($deductions as $material_id => $qty_to_deduct) {
         while ($qty_to_deduct > 0) {
             $stmt = $conn->prepare("
-                SELECT id, quantity, unit, expiration_date 
+                SELECT id, quantity, unit, expiration_date, cost 
                 FROM inventory_log 
                 WHERE material_id = ? AND quantity > 0 
                 ORDER BY expiration_date ASC, id ASC
@@ -89,6 +89,8 @@ try {
             }
 
             $deduct_qty = min($qty_to_deduct, $log_entry['quantity']);
+            $unit_cost = floatval($log_entry['cost']); // positive cost
+            $total_cost = $deduct_qty * $unit_cost;
 
             // a) Reduce existing log entry
             $stmt = $conn->prepare("UPDATE inventory_log SET quantity = quantity - ? WHERE id = ?");
@@ -96,21 +98,24 @@ try {
             $stmt->execute();
             $stmt->close();
 
-            // b) Create OUT entry
+            // b) Create OUT entry with negative quantity but positive cost
             $stmt = $conn->prepare("
-                INSERT INTO inventory_log (material_id, quantity, unit, expiration_date, reason, user_id)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO inventory_log 
+                    (material_id, quantity, unit, expiration_date, reason, user_id, cost, total_cost)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $negative_qty = -$deduct_qty;
             $reason = "Auto Deduction from Customer Order";
             $stmt->bind_param(
-                "idsssi",
+                "idsssidd",
                 $material_id,
                 $negative_qty,
                 $log_entry['unit'],
                 $log_entry['expiration_date'],
                 $reason,
-                $user_id
+                $user_id,
+                $unit_cost,
+                $total_cost
             );
             $stmt->execute();
             $stmt->close();

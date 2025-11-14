@@ -30,7 +30,7 @@ $sql = "
         CASE
             WHEN il.quantity > 0 THEN 'IN'
             WHEN il.quantity < 0 THEN 'OUT'
-            ELSE 'NONE'
+            ELSE 'IN'
         END AS movement_type,
         il.created_at AS timestamp
     FROM inventory_log il

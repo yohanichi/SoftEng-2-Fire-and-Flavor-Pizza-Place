@@ -62,8 +62,20 @@ if (!$data && !empty($_POST)) {
         $addonsJson = json_encode($finalAddons);
 
         // Corrected bind_param
-        $stmt->bind_param("ississssd", $orderId, $menu_item, $category, $quantity, $sizeValue, $price, $addonsJson, $voucher, $total);
+        $itemTotal = $price * $quantity;
 
+        $stmt->bind_param(
+            "ississssd",
+            $orderId,
+            $menu_item,
+            $category,
+            $quantity,
+            $sizeValue,
+            $price,
+            $addonsJson,
+            $voucher,
+            $itemTotal
+        );
 
         if (!$stmt->execute()) {
             echo json_encode(["success" => false, "message" => "Execute failed: " . $stmt->error]);
