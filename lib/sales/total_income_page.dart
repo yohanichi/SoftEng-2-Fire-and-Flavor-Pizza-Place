@@ -38,20 +38,11 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
         for (var item in order['items']) {
           final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
           final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
-
-          DateTime? createdAt;
-          try {
-            final dtStr = "${order['order_date']} ${order['order_time']}";
-            createdAt = DateFormat("MMM d, yyyy h:mm a").parse(dtStr);
-          } catch (_) {
-            createdAt = DateTime.now(); // fallback
-          }
-
           flatItems.add({
             'menuItem': item['menuItem'],
             'price': price,
             'quantity': qty,
-            'createdAt': createdAt,
+            'created_at': order['orderDate'] ?? '', // optional timestamp
           });
         }
       }
@@ -127,26 +118,19 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter items by date
+    // Filter items by date if selected
     List<Map<String, dynamic>> filteredItems = flatItems.where((item) {
-      final createdAt = item['createdAt'] as DateTime?;
-      if (createdAt == null) return false;
+      if (startDate == null && endDate == null) return true;
 
-      if (startDate != null && createdAt.isBefore(startDate!)) return false;
-      if (endDate != null &&
-          createdAt.isAfter(endDate!.add(const Duration(days: 1))))
-        return false;
-
-      return true;
+      try {
+        final createdAt = DateTime.parse(item['created_at'] ?? '');
+        if (startDate != null && createdAt.isBefore(startDate!)) return false;
+        if (endDate != null && createdAt.isAfter(endDate!)) return false;
+        return true;
+      } catch (_) {
+        return true;
+      }
     }).toList();
-
-    // Calculate totalProfit for filtered items
-    final totalProfitFiltered = filteredItems.fold<double>(0, (sum, item) {
-      final price = item['price'] ?? 0.0;
-      final ingredientCost = item['ingredientCost'] ?? 0.0;
-      final qty = item['quantity'] ?? 1;
-      return sum + (price - ingredientCost) * qty;
-    });
 
     return Scaffold(
       appBar: AppBar(
@@ -181,9 +165,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                       color: Colors.orange,
                     ),
                     label: Text(
-                      startDate != null
-                          ? "From: ${DateFormat('MMM dd, yyyy').format(startDate!)}"
-                          : "From",
+                      "From",
                       style: GoogleFonts.poppins(color: Colors.orange),
                     ),
                   ),
@@ -195,9 +177,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                       color: Colors.orange,
                     ),
                     label: Text(
-                      endDate != null
-                          ? "To: ${DateFormat('MMM dd, yyyy').format(endDate!)}"
-                          : "To",
+                      "To",
                       style: GoogleFonts.poppins(color: Colors.orange),
                     ),
                   ),
@@ -217,7 +197,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                   ),
                 ),
                 Text(
-                  formatter.format(totalProfitFiltered),
+                  formatter.format(totalProfit),
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -228,7 +208,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
             ),
             const SizedBox(height: 10),
 
-            // Scrollable list
+            // Scrollable list of items
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -255,11 +235,16 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                         final profit = totalRevenue - totalItemCost;
 
                         String createdAtText = '';
-                        final createdAt = item['createdAt'] as DateTime?;
-                        if (createdAt != null) {
-                          createdAtText = DateFormat(
-                            'MMM dd, yyyy hh:mm a',
-                          ).format(createdAt);
+                        if (item['created_at'] != null &&
+                            item['created_at'] != '') {
+                          try {
+                            final dt = DateTime.parse(item['created_at']);
+                            createdAtText = DateFormat(
+                              'MMM dd, yyyy hh:mm a',
+                            ).format(dt);
+                          } catch (_) {
+                            createdAtText = item['created_at'].toString();
+                          }
                         }
 
                         return Container(
