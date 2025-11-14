@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart'; // for PdfPageFormat and PdfColor
 
 class MaterialDetailsPage extends StatefulWidget {
   final String materialId;
@@ -49,7 +52,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
 
   Map<String, List<Map<String, dynamic>>> get groupedLogs {
     final Map<String, List<Map<String, dynamic>>> map = {};
-
     for (var log in filteredLogs) {
       try {
         final date = DateFormat(
@@ -63,7 +65,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
         continue;
       }
     }
-
     return map;
   }
 
@@ -98,19 +99,14 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
       if (data['success'] == true && data['logs'].isNotEmpty) {
         setState(() {
           logs = List<Map<String, dynamic>>.from(data['logs']);
-
-          // Set the material unit from the first log
           materialUnit = logs.first['unit'] ?? '';
-
-          // Initialize page for each date group
           currentPagePerGroup = {};
           for (var log in logs) {
             final date = DateFormat(
               'MM/dd/yyyy',
             ).format(DateTime.parse(log['timestamp']));
-            if (!currentPagePerGroup.containsKey(date)) {
+            if (!currentPagePerGroup.containsKey(date))
               currentPagePerGroup[date] = 0;
-            }
           }
         });
       } else {
@@ -125,12 +121,10 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
   Future<void> _deductStock() async {
     final qtyText = _deductQtyController.text.trim();
     final reason = _deductReasonController.text.trim();
-
     if (qtyText.isEmpty || reason.isEmpty) {
       _showSnack("Please enter both quantity and reason.");
       return;
     }
-
     try {
       final res = await http.post(
         Uri.parse('${widget.apiBase}/inventory/stock_out.php'),
@@ -223,7 +217,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
-
                   const SizedBox(height: 12),
                   TextField(
                     controller: _deductReasonController,
@@ -267,13 +260,119 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
     );
   }
 
+  Future<void> _printPdf() async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return [
+            pw.Text(
+              'Material Stock Log: ${widget.materialName}',
+              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 16),
+            pw.Text(
+              startDate != null && endDate != null
+                  ? "Date Range: ${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)}"
+                  : "Date Range: All",
+              style: const pw.TextStyle(fontSize: 14),
+            ),
+            pw.SizedBox(height: 16),
+            // Grouped logs by date
+            ...groupedLogs.entries.map((entry) {
+              final date = entry.key;
+              final logsForDate = entry.value;
+
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(
+                    color: PdfColor(
+                      1.0,
+                      0.647,
+                      0.0,
+                      0.2,
+                    ), // RGBA where R,G,B are 0-1
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text(
+                      date,
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  pw.SizedBox(height: 6),
+                  pw.Table.fromTextArray(
+                    headers: [
+                      'Qty',
+                      'Unit',
+                      'Movement',
+                      'Reason',
+                      'Cost/unit',
+                      'Total Cost',
+                      'Expiration',
+                      'Logged By',
+                    ],
+                    data: logsForDate.map((log) {
+                      final isOut = log['movement_type'] == 'OUT';
+                      final expiration =
+                          (log['expiration_date'] != null &&
+                              log['expiration_date'] != 'N/A' &&
+                              log['expiration_date'] != 'NONE')
+                          ? DateFormat(
+                              'MM/dd/yyyy',
+                            ).format(DateTime.parse(log['expiration_date']))
+                          : '';
+                      return [
+                        log['quantity'].toString(),
+                        log['unit'] ?? '',
+                        log['movement_type'] ?? '',
+                        isOut ? log['reason'] ?? '' : '',
+                        log['cost']?.toString() ?? '',
+                        log['total_cost']?.toString() ?? '',
+                        expiration,
+                        log['user'] ?? '',
+                      ];
+                    }).toList(),
+                  ),
+                  pw.SizedBox(height: 12),
+                ],
+              );
+            }).toList(),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.materialName),
         backgroundColor: Colors.orangeAccent,
+        actions: [
+          TextButton(
+            onPressed: _printPdf,
+            child: const Text(
+              "Print PDF",
+              style: TextStyle(
+                color: Colors.white, // Text color
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -460,9 +559,20 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                               // Logs
                               ...visibleLogs.map((log) {
                                 final isOut = log['movement_type'] == 'OUT';
-                                final cost = log['cost']?.toString() ?? '';
-                                final totalCost =
-                                    log['total_cost']?.toString() ?? '';
+                                bool isNearExpiration = false;
+                                if (log['expiration_date'] != null &&
+                                    log['expiration_date'] != 'N/A' &&
+                                    log['expiration_date'] != 'NONE') {
+                                  DateTime expDate = DateTime.parse(
+                                    log['expiration_date'],
+                                  );
+                                  final now = DateTime.now();
+                                  final daysLeft = expDate
+                                      .difference(now)
+                                      .inDays;
+                                  if (daysLeft <= 7 && daysLeft >= 0)
+                                    isNearExpiration = true;
+                                }
                                 return Container(
                                   width: double.infinity,
                                   margin: const EdgeInsets.symmetric(
@@ -471,7 +581,9 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                                   ),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: isNearExpiration
+                                        ? Colors.redAccent.withOpacity(0.2)
+                                        : Colors.white,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
@@ -509,7 +621,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                                         ),
                                       ),
                                       if (!isOut) ...[
-                                        // Cost per unit
                                         if (log['cost'] != null &&
                                             log['cost'] != 'NONE')
                                           Text(
@@ -519,30 +630,29 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                                               color: Colors.black54,
                                             ),
                                           ),
-
-                                        // Deducted amount (works even if IN turned NONE)
                                         Text(
-                                          "Deducted: ${log['deducted'] == null ? 0 : log['deducted']} ${log['unit'] ?? ''}",
+                                          "Deducted: ${log['deducted'] ?? 0} ${log['unit'] ?? ''}",
                                           style: GoogleFonts.poppins(
                                             fontSize: 13,
                                             color: Colors.redAccent,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-
-                                        // Expiration date
                                         if (log['expiration_date'] != null &&
                                             log['expiration_date'] != 'N/A' &&
                                             log['expiration_date'] != 'NONE')
                                           Text(
-                                            "Expiration Date: ${DateFormat('MM/dd/yyyy').format(DateTime.parse(log['expiration_date']))}",
+                                            "Expiration Date: ${DateFormat('MM/dd/yyyy').format(DateTime.parse(log['expiration_date']))}${isNearExpiration ? " (NEAR EXPIRATION DATE)" : ""}",
                                             style: GoogleFonts.poppins(
                                               fontSize: 13,
-                                              color: Colors.black87,
+                                              color: isNearExpiration
+                                                  ? Colors.red
+                                                  : Colors.black87,
+                                              fontWeight: isNearExpiration
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
                                             ),
                                           ),
-
-                                        // Total cost
                                         if (log['total_cost'] != null &&
                                             log['total_cost'] != 'NONE')
                                           Text(
@@ -552,15 +662,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                                               color: Colors.black54,
                                             ),
                                           ),
-
-                                        // Logged by
-                                        Text(
-                                          "Logged by: ${log['user'] ?? 'N/A'}",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 13,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
                                       ],
                                     ],
                                   ),
@@ -569,7 +670,7 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
 
                               const Divider(thickness: 1.2, height: 32),
 
-                              // Pagination buttons for this group
+                              // Pagination buttons
                               if (logsForDate.length > logsPerPage)
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
