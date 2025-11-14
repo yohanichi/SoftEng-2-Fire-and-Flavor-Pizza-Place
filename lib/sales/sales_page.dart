@@ -14,7 +14,7 @@ import '../order/dashboard_page.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
-import 'showTotalIncomePopup.dart';
+import 'total_income_page.dart';
 
 class SalesContent extends StatefulWidget {
   final String userId;
@@ -776,7 +776,13 @@ class _SalesContentState extends State<SalesContent> {
 
                         ElevatedButton(
                           onPressed: () {
-                            showTotalIncomePopup(context, filteredOrders);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    TotalIncomePage(orders: filteredOrders),
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange,

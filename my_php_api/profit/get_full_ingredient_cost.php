@@ -66,7 +66,8 @@ while ($row = $ingredientsResult->fetch_assoc()) {
 
     $breakdown[] = [
         "name" => $ingredientName,
-        "cost" => $costPerIngredient
+        "cost" => $costPerIngredient,
+        "quantity" => $recipeQty
     ];
 }
 
