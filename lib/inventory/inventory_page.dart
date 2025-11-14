@@ -406,26 +406,19 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: // Quantity input with unit in the label
+                      TextField(
                         controller: qtyCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: "Quantity",
-                          labelStyle: TextStyle(color: Colors.white70),
-                          enabledBorder: UnderlineInputBorder(
+                        decoration: InputDecoration(
+                          labelText:
+                              "Quantity${selectedUnit != null && selectedUnit!.isNotEmpty ? ' (${selectedUnit!})' : ''}",
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          enabledBorder: const UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.orangeAccent),
                           ),
                         ),
                         style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      selectedUnit ?? '',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],

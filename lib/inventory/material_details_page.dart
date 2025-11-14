@@ -95,9 +95,12 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
         ),
       );
       final data = jsonDecode(res.body);
-      if (data['success'] == true) {
+      if (data['success'] == true && data['logs'].isNotEmpty) {
         setState(() {
           logs = List<Map<String, dynamic>>.from(data['logs']);
+
+          // Set the material unit from the first log
+          materialUnit = logs.first['unit'] ?? '';
 
           // Initialize page for each date group
           currentPagePerGroup = {};
@@ -214,11 +217,13 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                   TextField(
                     controller: _deductQtyController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "Quantity",
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText:
+                          "Quantity (${materialUnit.isNotEmpty ? materialUnit : ''})",
+                      border: const OutlineInputBorder(),
                     ),
                   ),
+
                   const SizedBox(height: 12),
                   TextField(
                     controller: _deductReasonController,
