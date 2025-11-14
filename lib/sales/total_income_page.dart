@@ -30,43 +30,81 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
 
   Future<void> _prepareData() async {
     setState(() => isLoading = true);
-
-    // Flatten all order items
     flatItems = [];
+
     for (var order in widget.orders) {
       if (order['items'] is List) {
         for (var item in order['items']) {
           final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
           final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+
+          // --- Parse addons and size ---
+          List<Map<String, String>> structuredAddons = [];
+          if (item['addons'] != null) {
+            try {
+              var decoded = item['addons'] is String
+                  ? json.decode(item['addons'])
+                  : item['addons'];
+              if (decoded is List) {
+                for (var a in decoded) {
+                  if (a is String) {
+                    structuredAddons.add({"name": a, "type": "addon"});
+                  } else if (a is Map) {
+                    structuredAddons.add({
+                      "name": a["name"] ?? "",
+                      "type": a["type"] ?? "addon",
+                    });
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+
+          // Include size as a special addon
+          if (item['size'] != null && item['size'].toString().isNotEmpty) {
+            structuredAddons.add({
+              "name": item['size'].toString(),
+              "type": "size",
+            });
+          }
+
+          debugPrint(
+            "Menu: ${item['menuItem']}, Addons/Size: $structuredAddons",
+          );
+
           flatItems.add({
             'menuItem': item['menuItem'],
             'price': price,
             'quantity': qty,
-            'created_at': order['orderDate'] ?? '', // optional timestamp
+            'created_at': order['orderDate'] ?? '',
+            'addons': structuredAddons,
           });
         }
       }
     }
 
     // Fetch ingredient costs
-    List<Future<Map<String, dynamic>>> ingredientFutures = flatItems
-        .map((item) => fetchIngredientCostWithBreakdown(item['menuItem']))
-        .toList();
+    try {
+      final ingredientData = await Future.wait(
+        flatItems.map(
+          (item) => fetchIngredientCostWithBreakdown(
+            item['menuItem'],
+            item['addons'],
+          ),
+        ),
+      );
 
-    List<Map<String, dynamic>> ingredientData = await Future.wait(
-      ingredientFutures,
-    );
-
-    // Attach ingredient costs & calculate total profit
-    totalProfit = 0;
-    for (int i = 0; i < flatItems.length; i++) {
-      final ingredientCost = ingredientData[i]['totalCost'] ?? 0.0;
-      flatItems[i]['ingredientCost'] = ingredientCost;
-      flatItems[i]['ingredientsBreakdown'] =
-          ingredientData[i]['breakdown'] ?? [];
-
-      totalProfit +=
-          (flatItems[i]['price'] - ingredientCost) * flatItems[i]['quantity'];
+      totalProfit = 0;
+      for (int i = 0; i < flatItems.length; i++) {
+        final ingredientCost = ingredientData[i]['totalCost'] ?? 0.0;
+        flatItems[i]['ingredientCost'] = ingredientCost;
+        flatItems[i]['ingredientsBreakdown'] =
+            ingredientData[i]['breakdown'] ?? [];
+        totalProfit +=
+            (flatItems[i]['price'] - ingredientCost) * flatItems[i]['quantity'];
+      }
+    } catch (e) {
+      debugPrint("Error fetching ingredient costs: $e");
     }
 
     setState(() => isLoading = false);
@@ -74,14 +112,15 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
 
   Future<Map<String, dynamic>> fetchIngredientCostWithBreakdown(
     String menuName,
+    List<Map<String, String>> addons,
   ) async {
     try {
       final baseUrl = await ApiConfig.getBaseUrl();
       final url = Uri.parse(
-        "$baseUrl/profit/get_full_ingredient_cost.php?name=$menuName",
+        "$baseUrl/profit/get_full_ingredient_cost.php?name=$menuName&addons=${jsonEncode(addons)}",
       );
-      final res = await http.get(url);
 
+      final res = await http.get(url);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         return {
@@ -118,10 +157,8 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter items by date if selected
     List<Map<String, dynamic>> filteredItems = flatItems.where((item) {
       if (startDate == null && endDate == null) return true;
-
       try {
         final createdAt = DateTime.parse(item['created_at'] ?? '');
         if (startDate != null && createdAt.isBefore(startDate!)) return false;
@@ -142,7 +179,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Date range selector
+            // Date picker
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
@@ -208,7 +245,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
             ),
             const SizedBox(height: 10),
 
-            // Scrollable list of items
+            // List of items
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -229,7 +266,6 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                         final breakdown =
                             item['ingredientsBreakdown'] as List<dynamic>? ??
                             [];
-
                         final totalItemCost = ingredientCost * qty;
                         final totalRevenue = price * qty;
                         final profit = totalRevenue - totalItemCost;
@@ -291,11 +327,30 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                                   ),
                                 ),
                                 ...breakdown.map((b) {
-                                  final ingQty = b['quantity'] ?? 0;
-                                  final ingCost = b['cost'] ?? 0.0;
-                                  final totalIngCost = ingCost * qty;
+                                  final name = b['name'] ?? '';
+                                  final unitCost = (b['unitCost'] ?? 0)
+                                      .toDouble();
+                                  final qtyUsed = (b['quantity'] ?? 0)
+                                      .toDouble();
+                                  final type = (b['type'] ?? 'menu')
+                                      .toString()
+                                      .toLowerCase();
+                                  final totalCost = (unitCost * qtyUsed * qty)
+                                      .toDouble();
+
+                                  String typeLabel = '';
+                                  if (type == 'addon') typeLabel = ' (Addon)';
+                                  if (type == 'size') typeLabel = ' (Size)';
+
                                   return Text(
-                                    "• ${b['name']}: $ingQty × $qty = ${formatter.format(totalIngCost)}",
+                                    "• $name$typeLabel: ($unitCost × $qtyUsed) × $qty = ${formatter.format(totalCost)}",
+                                    style: TextStyle(
+                                      color: type == 'addon'
+                                          ? Colors.blueAccent
+                                          : type == 'size'
+                                          ? Colors.deepOrange
+                                          : Colors.black87,
+                                    ),
                                   );
                                 }),
                               ],
