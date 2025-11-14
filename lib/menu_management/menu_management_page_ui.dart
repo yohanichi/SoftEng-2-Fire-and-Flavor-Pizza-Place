@@ -301,7 +301,7 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
                 DataCell(SizedBox()),
                 DataCell(
                   Text(
-                    "Addon List is Empty",
+                    "Ingredients List is Empty",
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
                       color: Colors.grey,

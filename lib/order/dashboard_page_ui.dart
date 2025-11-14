@@ -345,6 +345,7 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
           selectedCategory: selectedCategory,
           onFilter: _applyCategoryFilter,
           onCartPressed: _toggleCart,
+          cartItemsCount: cartItems.length, // NEW
         ),
         const SizedBox(height: 25),
         Row(
@@ -523,11 +524,13 @@ class _CategoryChips extends StatefulWidget {
   final Function(String) onFilter;
   final String selectedCategory;
   final VoidCallback onCartPressed;
+  final int cartItemsCount; // NEW
 
   const _CategoryChips({
     required this.menuItems,
     required this.onFilter,
     required this.onCartPressed,
+    this.cartItemsCount = 0, // NEW
     this.selectedCategory = "All",
     Key? key,
   }) : super(key: key);
@@ -642,6 +645,7 @@ class _CategoryChipsState extends State<_CategoryChips> {
           child: // Cart Button as Image
           HoverableCartButton(
             onCartPressed: widget.onCartPressed,
+            cartItemCount: widget.cartItemsCount, // <- NEW property
           ),
         ),
       ],
@@ -814,9 +818,13 @@ class MenuGrid extends StatelessWidget {
 
 class HoverableCartButton extends StatefulWidget {
   final VoidCallback onCartPressed;
+  final int cartItemCount; // NEW
 
-  const HoverableCartButton({required this.onCartPressed, Key? key})
-    : super(key: key);
+  const HoverableCartButton({
+    required this.onCartPressed,
+    this.cartItemCount = 0, // default 0
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<HoverableCartButton> createState() => _HoverableCartButtonState();
@@ -833,27 +841,58 @@ class _HoverableCartButtonState extends State<HoverableCartButton> {
       onExit: (_) => setState(() => _isHovering = false),
       child: GestureDetector(
         onTap: widget.onCartPressed,
-        child: Tooltip(
-          message: "View Cart",
-          verticalOffset: 30,
-          decoration: BoxDecoration(
-            color: Colors.black87,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          textStyle: const TextStyle(color: Colors.white),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 45,
-            height: 45,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _isHovering
-                  ? Colors.orange.withOpacity(0.3) // highlight on hover
-                  : Colors.transparent, // fully transparent
-              borderRadius: BorderRadius.circular(25),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Tooltip(
+              message: "View Cart",
+              verticalOffset: 30,
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              textStyle: const TextStyle(color: Colors.white),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 45,
+                height: 45,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isHovering
+                      ? Colors.orange.withOpacity(0.3)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Image.asset(
+                  'assets/icons/cart.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
-            child: Image.asset('assets/icons/cart.png', fit: BoxFit.contain),
-          ),
+
+            // --- Notification Badge ---
+            if (widget.cartItemCount > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  child: Text(
+                    widget.cartItemCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
