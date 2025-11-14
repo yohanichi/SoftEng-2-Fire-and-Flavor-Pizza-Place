@@ -34,6 +34,7 @@ class PizzaDashboardPage extends StatefulWidget {
   final bool isLoading;
   final VoidCallback onEditProfile;
   final String apiBase;
+  final List<Map<String, dynamic>> cartItems;
 
   const PizzaDashboardPage({
     super.key,
@@ -49,6 +50,7 @@ class PizzaDashboardPage extends StatefulWidget {
     required this.onEditProfile,
     required this.apiBase,
     required this.onHome,
+    required this.cartItems, // <-- add this
     this.onDashboard,
     this.onAdminDashboard,
     this.onManagerPage,
@@ -70,12 +72,13 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
   String selectedCategory = "All";
   late List<dynamic> filteredMenuItems;
   bool showCart = false;
-  List<Map<String, dynamic>> cartItems = [];
+  late List<Map<String, dynamic>> cartItems;
 
   @override
   void initState() {
     super.initState();
     currentModule = widget.activePage;
+    cartItems = widget.cartItems; // initialize from widget
 
     // Initialize filteredMenuItems immediately
     filteredMenuItems = widget.menuItems
@@ -418,6 +421,7 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
               }, cartItems); // <-- pass cartItems into showOrderPopup
             },
             apiBase: widget.apiBase,
+            cartItems: cartItems, // ✅ You already passed it here
           ),
         ),
       ],
@@ -658,11 +662,13 @@ class MenuGrid extends StatelessWidget {
   final List<dynamic> menuItems;
   final void Function(Map<String, dynamic>) onAddToCart;
   final String apiBase;
+  final List<Map<String, dynamic>> cartItems; // <-- add this
 
   const MenuGrid({
     required this.menuItems,
     required this.onAddToCart,
     required this.apiBase,
+    required this.cartItems, // <-- pass cartItems
     Key? key,
   }) : super(key: key);
 
@@ -694,6 +700,55 @@ class MenuGrid extends StatelessWidget {
         final name = item['name']?.toString() ?? 'Unnamed Item';
         final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0.0;
         final description = item['description']?.toString() ?? 'No description';
+
+        // ✅ Check if item is in cart
+        final menuId = int.tryParse(item['id']?.toString() ?? '0') ?? 0;
+
+        // Sum quantities for all cart entries with this menu_id
+        final totalQuantity = cartItems
+            .where((cartItem) {
+              final cartMenuId =
+                  int.tryParse(cartItem['menu_id']?.toString() ?? '0') ?? 0;
+              return cartMenuId == menuId;
+            })
+            .fold<int>(0, (sum, cartItem) {
+              final qty = cartItem['quantity'];
+              return sum +
+                  ((qty is int) ? qty : (qty is double ? qty.toInt() : 0));
+            });
+
+        // Use RichText for colored quantity indicator
+        final displayWidget = totalQuantity > 0
+            ? RichText(
+                text: TextSpan(
+                  text: name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: " (Added $totalQuantity to Cart)",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color:
+                            Colors.greenAccent, // ✅ Green color for indicator
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Text(
+                name,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
+              );
 
         return Container(
           decoration: BoxDecoration(
@@ -738,9 +793,7 @@ class MenuGrid extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(
-                      0.5,
-                    ), // semi-transparent background
+                    color: Colors.black.withOpacity(0.5),
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(16),
                     ),
@@ -748,30 +801,22 @@ class MenuGrid extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16, // increased font size
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white, // better contrast
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      displayWidget,
+
                       const SizedBox(height: 4),
                       Container(
-                        height: 36, // fits roughly 2 lines
+                        height: 36,
                         child: Text(
                           description,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.white70, // semi-transparent white
+                            color: Colors.white70,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           softWrap: true,
                         ),
                       ),
-
                       const Spacer(),
                       Text(
                         "₱${price.toStringAsFixed(2)}",
@@ -788,7 +833,7 @@ class MenuGrid extends StatelessWidget {
                           onPressed: () => onAddToCart(item),
                           icon: const Icon(Icons.add_shopping_cart, size: 16),
                           label: Text(
-                            "Add",
+                            totalQuantity > 0 ? "Add ($totalQuantity)" : "Add",
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w600,
                               fontSize: 12,

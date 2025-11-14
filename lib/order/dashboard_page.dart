@@ -38,7 +38,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late String currentRole;
   late String userId;
   late String apiBase;
-
+  List<Map<String, dynamic>> cartItems = [];
   bool _isSidebarOpen = false;
   String _activePage = "dashboard";
   List<dynamic> menuItems = [];
@@ -224,6 +224,7 @@ class _DashboardPageState extends State<DashboardPage> {
       isLoading: isLoading,
       onRefreshMenu: _fetchMenuItems,
       apiBase: apiBase,
+      cartItems: cartItems,
     );
   }
 }
