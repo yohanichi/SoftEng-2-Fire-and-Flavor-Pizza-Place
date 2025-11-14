@@ -496,22 +496,6 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                                             color: Colors.black54,
                                           ),
                                         ),
-                                      if (!isOut && cost.isNotEmpty)
-                                        Text(
-                                          "Cost per unit: ₱${double.tryParse(cost)?.toStringAsFixed(2) ?? cost}",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 13,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      if (!isOut && totalCost.isNotEmpty)
-                                        Text(
-                                          "Total Cost: ₱${double.tryParse(totalCost)?.toStringAsFixed(2) ?? totalCost}",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 13,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
                                       Text(
                                         "Logged by: ${log['user'] ?? 'N/A'}",
                                         style: GoogleFonts.poppins(
@@ -519,6 +503,55 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                                           color: Colors.black54,
                                         ),
                                       ),
+                                      // For IN logs
+                                      if (!isOut) ...[
+                                        if (log['cost'] != null)
+                                          Text(
+                                            "Cost per unit: ₱${double.tryParse(log['cost'].toString())?.toStringAsFixed(2) ?? log['cost']}",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+
+                                        if (log['deducted'] != null &&
+                                            log['deducted'] > 0)
+                                          Text(
+                                            "Deducted: ${log['deducted']} ${log['unit']}",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              color: Colors.redAccent,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+
+                                        if (log['expiration_date'] != null &&
+                                            log['expiration_date'] != 'N/A')
+                                          Text(
+                                            "Expiration Date: ${DateFormat('MM/dd/yyyy').format(DateTime.parse(log['expiration_date']))}",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+
+                                        if (log['total_cost'] != null)
+                                          Text(
+                                            "Total Cost: ₱${double.tryParse(log['total_cost'].toString())?.toStringAsFixed(2) ?? log['total_cost']}",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 13,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+
+                                        Text(
+                                          "Logged by: ${log['user'] ?? 'N/A'}",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 );

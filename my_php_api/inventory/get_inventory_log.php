@@ -19,6 +19,7 @@ if ($id <= 0) {
 
 $sql = "
     SELECT
+        il.id,
         il.quantity,
         il.unit,
         il.expiration_date,
@@ -35,8 +36,7 @@ $sql = "
     FROM inventory_log il
     LEFT JOIN users u ON il.user_id = u.id
     WHERE il.material_id = ?
-    ORDER BY il.id DESC;
-
+    ORDER BY il.id DESC
 ";
 
 $stmt = $conn->prepare($sql);
@@ -57,6 +57,21 @@ while ($row = $result->fetch_assoc()) {
     if (empty($row['expiration_date'])) $row['expiration_date'] = 'N/A';
     if (empty($row['reason'])) $row['reason'] = 'N/A';
     if (empty($row['user'])) $row['user'] = 'N/A';
+
+    // Calculate deducted quantity for IN logs
+    if ($row['movement_type'] === 'IN') {
+        $stmt2 = $conn->prepare("
+            SELECT SUM(ABS(quantity)) AS deducted
+            FROM inventory_log
+            WHERE material_id = ? AND unit = ? AND expiration_date = ? AND quantity < 0
+        ");
+        $stmt2->bind_param("iss", $id, $row['unit'], $row['expiration_date']);
+        $stmt2->execute();
+        $res2 = $stmt2->get_result()->fetch_assoc();
+        $row['deducted'] = floatval($res2['deducted'] ?? 0);
+        $stmt2->close();
+    }
+
     $logs[] = $row;
 }
 
