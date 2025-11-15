@@ -351,14 +351,27 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
         title: const Text("Total Income"),
         backgroundColor: Colors.orange,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
+          TextButton.icon(
             onPressed: () {
               _printPdf(flatItems, totalProfit);
             },
+            icon: const Icon(
+              Icons.print,
+              color: Colors.white, // make sure the icon is visible
+              size: 20,
+            ),
+            label: const Text(
+              "Print",
+              style: TextStyle(
+                color: Colors.white, // match AppBar text color
+                fontSize: 16,
+              ),
+            ),
           ),
+          const SizedBox(width: 8), // optional spacing at the end
         ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(

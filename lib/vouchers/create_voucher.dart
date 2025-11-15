@@ -183,8 +183,6 @@ class VoucherPageUI extends StatelessWidget {
                       role: role,
                       isSidebarOpen: isSidebarOpen,
                       toggleSidebar: toggleSidebar,
-                      onDashboard: () {},
-                      onHome: () {},
                       onLogout: onLogout,
                     ),
                   ),

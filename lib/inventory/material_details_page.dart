@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart'; // for PdfPageFormat and PdfColor
+import 'package:flutter/services.dart';
 
 class MaterialDetailsPage extends StatefulWidget {
   final String materialId;
@@ -210,7 +211,14 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: _deductQtyController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d*\.?\d{0,2}'),
+                      ), // allows up to 2 decimal places
+                    ],
                     decoration: InputDecoration(
                       labelText:
                           "Quantity (${materialUnit.isNotEmpty ? materialUnit : ''})",
