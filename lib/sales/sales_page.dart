@@ -794,23 +794,12 @@ class _SalesContentState extends State<SalesContent> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
+                                builder: (_) =>
                                     TotalIncomePage(orders: filteredOrders),
                               ),
                             );
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                          ),
-                          child: const Text(
-                            "Total Income",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          child: const Text("Total Income"),
                         ),
                       ],
                     ),

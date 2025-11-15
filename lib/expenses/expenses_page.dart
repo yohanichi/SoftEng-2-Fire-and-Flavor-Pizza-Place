@@ -938,6 +938,7 @@ class _ExpensesContentState extends State<ExpensesContent> {
                       role: widget.role,
                       isSidebarOpen: widget.isSidebarOpen,
                       toggleSidebar: widget.toggleSidebar,
+
                       onLogout: widget.onLogout,
                     ),
                   ),

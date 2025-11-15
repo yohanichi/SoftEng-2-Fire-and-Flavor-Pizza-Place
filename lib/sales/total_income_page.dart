@@ -3,7 +3,11 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
 import '../config/api_config.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class TotalIncomePage extends StatefulWidget {
   final List<Map<String, dynamic>> orders;
@@ -15,8 +19,6 @@ class TotalIncomePage extends StatefulWidget {
 }
 
 class _TotalIncomePageState extends State<TotalIncomePage> {
-  DateTime? startDate;
-  DateTime? endDate;
   bool isLoading = true;
   late List<Map<String, dynamic>> flatItems;
   double totalProfit = 0.0;
@@ -38,7 +40,7 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
           final price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
           final qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
 
-          // --- Parse addons and size ---
+          // Parse addons and size
           List<Map<String, String>> structuredAddons = [];
           if (item['addons'] != null) {
             try {
@@ -60,17 +62,12 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
             } catch (_) {}
           }
 
-          // Include size as a special addon
           if (item['size'] != null && item['size'].toString().isNotEmpty) {
             structuredAddons.add({
               "name": item['size'].toString(),
               "type": "size",
             });
           }
-
-          debugPrint(
-            "Menu: ${item['menuItem']}, Addons/Size: $structuredAddons",
-          );
 
           flatItems.add({
             'menuItem': item['menuItem'],
@@ -94,19 +91,17 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
         ),
       );
 
-      totalProfit = 0;
       for (int i = 0; i < flatItems.length; i++) {
         final ingredientCost = ingredientData[i]['totalCost'] ?? 0.0;
         flatItems[i]['ingredientCost'] = ingredientCost;
         flatItems[i]['ingredientsBreakdown'] =
             ingredientData[i]['breakdown'] ?? [];
-        totalProfit +=
-            (flatItems[i]['price'] - ingredientCost) * flatItems[i]['quantity'];
       }
     } catch (e) {
       debugPrint("Error fetching ingredient costs: $e");
     }
 
+    _calculateTotalProfit();
     setState(() => isLoading = false);
   }
 
@@ -131,98 +126,244 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
     } catch (e) {
       debugPrint("Error fetching ingredient cost: $e");
     }
-
     return {'totalCost': 0.0, 'breakdown': []};
   }
 
-  Future<void> _pickDate(BuildContext context, bool isStart) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: isStart
-          ? (startDate ?? DateTime.now())
-          : (endDate ?? DateTime.now()),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() {
-        if (isStart) {
-          startDate = picked;
-        } else {
-          endDate = picked;
-        }
-      });
+  void _calculateTotalProfit() {
+    double profit = 0.0;
+    for (var item in flatItems) {
+      final price = item['price'] ?? 0.0;
+      final ingredientCost = item['ingredientCost'] ?? 0.0;
+      final qty = item['quantity'] ?? 1;
+      profit += (price - ingredientCost) * qty;
     }
+    totalProfit = profit;
+  }
+
+  Future<void> _printPdf(
+    List<Map<String, dynamic>> flatItems,
+    double totalProfit,
+  ) async {
+    final pdf = pw.Document();
+    final numberFormat = NumberFormat("#,##0.00");
+
+    // Load local fonts
+    final robotoFontData = await rootBundle.load(
+      'assets/fonts/Roboto-Regular.ttf',
+    );
+    final robotoBoldFontData = await rootBundle.load(
+      'assets/fonts/Roboto-Bold.ttf',
+    );
+    final robotoFont = pw.Font.ttf(robotoFontData);
+    final robotoBoldFont = pw.Font.ttf(robotoBoldFontData);
+
+    // Helper to format peso amounts
+    pw.Widget pesoText(double amount, {bool bold = false}) {
+      final formattedAmount = numberFormat.format(amount);
+      return pw.RichText(
+        text: pw.TextSpan(
+          children: [
+            pw.TextSpan(
+              text: "₱",
+              style: pw.TextStyle(font: bold ? robotoBoldFont : robotoFont),
+            ),
+            pw.TextSpan(
+              text: formattedAmount,
+              style: pw.TextStyle(font: bold ? robotoBoldFont : robotoFont),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Pre-build item widgets
+    final itemWidgets = flatItems.map((item) {
+      final price = item['price'] ?? 0.0;
+      final ingredientCost = item['ingredientCost'] ?? 0.0;
+      final qty = item['quantity'] ?? 1;
+      final breakdown = item['ingredientsBreakdown'] as List<dynamic>? ?? [];
+      final totalItemCost = ingredientCost * qty;
+      final totalRevenue = price * qty;
+      final profit = totalRevenue - totalItemCost;
+
+      String createdAtText = '';
+      if (item['created_at'] != null && item['created_at'] != '') {
+        try {
+          final dt = DateTime.parse(item['created_at']);
+          createdAtText = DateFormat('MMM dd, yyyy hh:mm a').format(dt);
+        } catch (_) {
+          createdAtText = item['created_at'].toString();
+        }
+      }
+
+      return pw.Container(
+        margin: const pw.EdgeInsets.only(bottom: 12),
+        padding: const pw.EdgeInsets.all(12),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfColors.grey, width: 0.5),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+          color: PdfColors.white,
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            if (createdAtText.isNotEmpty)
+              pw.Text(
+                createdAtText,
+                style: pw.TextStyle(
+                  font: robotoFont,
+                  fontSize: 10,
+                  color: PdfColors.grey,
+                ),
+              ),
+            pw.SizedBox(height: 4),
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Left column
+                pw.Expanded(
+                  flex: 1,
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        item['menuItem'] ?? '',
+                        style: pw.TextStyle(font: robotoBoldFont, fontSize: 14),
+                      ),
+                      pw.Row(
+                        children: [
+                          pw.Text(
+                            "Price: ",
+                            style: pw.TextStyle(font: robotoFont),
+                          ),
+                          pesoText(price),
+                        ],
+                      ),
+                      pw.Text(
+                        "Quantity: $qty",
+                        style: pw.TextStyle(font: robotoFont),
+                      ),
+                      pw.Row(
+                        children: [
+                          pw.Text(
+                            "Total Ingredient Cost: ",
+                            style: pw.TextStyle(font: robotoFont),
+                          ),
+                          pesoText(totalItemCost),
+                        ],
+                      ),
+                      pw.Row(
+                        children: [
+                          pw.Text(
+                            "Profit: ",
+                            style: pw.TextStyle(font: robotoFont),
+                          ),
+                          pesoText(profit, bold: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(width: 12),
+                // Right column: breakdown
+                pw.Expanded(
+                  flex: 2,
+                  child: breakdown.isNotEmpty
+                      ? pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              "Ingredients Breakdown:",
+                              style: pw.TextStyle(font: robotoBoldFont),
+                            ),
+                            pw.SizedBox(height: 4),
+                            ...breakdown.map((b) {
+                              final name = b['name'] ?? '';
+                              final unitCost = (b['unitCost'] ?? 0).toDouble();
+                              final qtyUsed = (b['quantity'] ?? 0).toDouble();
+                              final type = (b['type'] ?? 'menu')
+                                  .toString()
+                                  .toLowerCase();
+                              final totalCost = (unitCost * qtyUsed * qty)
+                                  .toDouble();
+
+                              String typeLabel = '';
+                              if (type == 'addon') typeLabel = ' (Addon)';
+                              if (type == 'size') typeLabel = ' (Size)';
+
+                              return pw.Row(
+                                children: [
+                                  pw.Expanded(
+                                    child: pw.Text(
+                                      "• $name$typeLabel: ($unitCost × $qtyUsed) × $qty = ",
+                                      style: pw.TextStyle(font: robotoFont),
+                                    ),
+                                  ),
+                                  pesoText(totalCost),
+                                ],
+                              );
+                            }),
+                          ],
+                        )
+                      : pw.Container(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }).toList();
+
+    // Add page
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Center(
+            child: pw.Text(
+              "Total Income Report",
+              style: pw.TextStyle(font: robotoBoldFont, fontSize: 24),
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          pw.Row(
+            children: [
+              pw.Text(
+                "Total Profit: ",
+                style: pw.TextStyle(font: robotoBoldFont, fontSize: 18),
+              ),
+              pesoText(totalProfit, bold: true),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+          ...itemWidgets,
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) => pdf.save());
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredItems = flatItems.where((item) {
-      if (startDate == null && endDate == null) return true;
-      try {
-        final createdAt = DateTime.parse(item['created_at'] ?? '');
-        if (startDate != null && createdAt.isBefore(startDate!)) return false;
-        if (endDate != null && createdAt.isAfter(endDate!)) return false;
-        return true;
-      } catch (_) {
-        return true;
-      }
-    }).toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Total Income"),
         backgroundColor: Colors.orange,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.print),
+            onPressed: () {
+              _printPdf(flatItems, totalProfit);
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Date picker
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: () => _pickDate(context, true),
-                    icon: const Icon(
-                      Icons.calendar_today,
-                      color: Colors.orange,
-                    ),
-                    label: Text(
-                      "From",
-                      style: GoogleFonts.poppins(color: Colors.orange),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  TextButton.icon(
-                    onPressed: () => _pickDate(context, false),
-                    icon: const Icon(
-                      Icons.calendar_today,
-                      color: Colors.orange,
-                    ),
-                    label: Text(
-                      "To",
-                      style: GoogleFonts.poppins(color: Colors.orange),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
             // Total profit
             Row(
               children: [
@@ -249,17 +390,17 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : filteredItems.isEmpty
+                  : flatItems.isEmpty
                   ? Center(
                       child: Text(
-                        "No items found for the selected date.",
+                        "No items found.",
                         style: GoogleFonts.poppins(color: Colors.grey),
                       ),
                     )
                   : ListView.builder(
-                      itemCount: filteredItems.length,
+                      itemCount: flatItems.length,
                       itemBuilder: (context, index) {
-                        final item = filteredItems[index];
+                        final item = flatItems[index];
                         final price = item['price'] ?? 0.0;
                         final ingredientCost = item['ingredientCost'] ?? 0.0;
                         final qty = item['quantity'] ?? 1;
@@ -337,7 +478,6 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
                                       .toLowerCase();
                                   final totalCost = (unitCost * qtyUsed * qty)
                                       .toDouble();
-
                                   String typeLabel = '';
                                   if (type == 'addon') typeLabel = ' (Addon)';
                                   if (type == 'size') typeLabel = ' (Size)';

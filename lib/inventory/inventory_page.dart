@@ -92,7 +92,6 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
     String unit,
     DateTime? expDate,
     String vendor,
-    String paymentMethod,
   ) async {
     if (expDate == null) {
       _showSnack("Please pick an expiration date.");
@@ -100,7 +99,6 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
     }
 
     try {
-      // 1️⃣ Add stock to inventory
       final inventoryRes = await http.post(
         Uri.parse('$apiBase/inventory/add_inventory.php'),
         body: {
@@ -119,9 +117,9 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
       final inventoryData = jsonDecode(inventoryRes.body);
       if (inventoryData['success']) {
         _showSnack("✅ Stock added successfully!");
-        await _fetchMaterials(); // Refresh inventory list
+        await _fetchMaterials();
 
-        // 2️⃣ Create corresponding expense entry
+        // Expense auto-records as CASH by default
         final double qty = double.tryParse(quantity) ?? 0;
         final double unitCost = double.tryParse(cost) ?? 0;
         final double totalCost = qty * unitCost;
@@ -131,13 +129,13 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'date': DateTime.now().toIso8601String().split('T')[0],
-            'category_id': 1, // Ingredients
+            'category_id': 1,
             'description': 'Purchased $quantity $unit of $name',
             'vendor': vendor,
             'quantity': qty,
             'unit_price': unitCost,
             'total_cost': totalCost,
-            'payment_method': paymentMethod.isEmpty ? 'Cash' : paymentMethod,
+            'payment_method': 'Cash',
             'notes': 'Added to inventory',
           }),
         );
@@ -146,7 +144,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
         if (expenseData['success']) {
           _showSnack("💰 Expense recorded successfully!");
         } else {
-          _showSnack("⚠️ Failed to record expense: ${expenseData['message']}");
+          _showSnack("⚠️ Expense failed: ${expenseData['message']}");
         }
       } else {
         _showSnack("⚠️ ${inventoryData['message']}");
@@ -356,8 +354,6 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
     final qtyCtrl = TextEditingController();
     final costCtrl = TextEditingController();
     final vendorCtrl = TextEditingController();
-    final paymentMethodCtrl = TextEditingController();
-    String selectedPaymentMethod = 'Cash';
     DateTime? expDate;
     String? selectedUnit = material?['unit'];
 
@@ -371,7 +367,6 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Material dropdown
                 if (material == null)
                   DropdownButtonFormField<String>(
                     value: selectedMaterialId,
@@ -402,30 +397,23 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   ),
                 if (material == null) const SizedBox(height: 12),
 
-                // Quantity input
-                Row(
-                  children: [
-                    Expanded(
-                      child: // Quantity input with unit in the label
-                      TextField(
-                        controller: qtyCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText:
-                              "Quantity${selectedUnit != null && selectedUnit!.isNotEmpty ? ' (${selectedUnit!})' : ''}",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          enabledBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.orangeAccent),
-                          ),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                // Quantity
+                TextField(
+                  controller: qtyCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText:
+                        "Quantity${selectedUnit != null && selectedUnit!.isNotEmpty ? ' ($selectedUnit)' : ''}",
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.orangeAccent),
                     ),
-                  ],
+                  ),
+                  style: const TextStyle(color: Colors.white),
                 ),
                 const SizedBox(height: 12),
 
-                // Cost input
+                // Cost
                 TextField(
                   controller: costCtrl,
                   keyboardType: TextInputType.number,
@@ -440,7 +428,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Vendor input
+                // Vendor
                 TextField(
                   controller: vendorCtrl,
                   decoration: const InputDecoration(
@@ -454,42 +442,13 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Payment Method Dropdown
-                DropdownButtonFormField<String>(
-                  value: selectedPaymentMethod,
-                  dropdownColor: Colors.grey[850],
-                  decoration: const InputDecoration(
-                    labelText: "Payment Method",
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.orangeAccent),
-                    ),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  items: ['Cash', 'GCash', 'Card', 'Other']
-                      .map(
-                        (method) => DropdownMenuItem(
-                          value: method,
-                          child: Text(method),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null)
-                      setState(() => selectedPaymentMethod = val);
-                  },
-                ),
-                const SizedBox(height: 12),
-
-                // Expiration date picker
+                // Expiration date
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         expDate != null
-                            ? "Expiry: ${expDate!.day.toString().padLeft(2, '0')}/"
-                                  "${expDate!.month.toString().padLeft(2, '0')}/"
-                                  "${expDate!.year}"
+                            ? "Expiry: ${expDate!.day}/${expDate!.month}/${expDate!.year}"
                             : "Pick Expiration Date",
                         style: const TextStyle(color: Colors.white70),
                       ),
@@ -505,9 +464,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                             data: Theme.of(context).copyWith(
                               colorScheme: ColorScheme.dark(
                                 primary: Colors.orangeAccent,
-                                onPrimary: Colors.black,
                                 surface: Colors.grey[850]!,
-                                onSurface: Colors.white,
                               ),
                               dialogBackgroundColor: Colors.grey[900],
                             ),
@@ -560,7 +517,6 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
                   unit,
                   expDate,
                   vendorCtrl.text,
-                  paymentMethodCtrl.text,
                 );
               },
               child: const Text("Add"),

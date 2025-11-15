@@ -72,16 +72,8 @@ class TaskPageUI extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient background behind Sidebar + main content
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.black, Colors.grey[900]!, Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
+          // main content
+          Container(decoration: const BoxDecoration(color: Color(0xFFF6F6F6))),
           Row(
             children: [
               // Sidebar
@@ -95,6 +87,7 @@ class TaskPageUI extends StatelessWidget {
                 onMenu: onMenu,
                 onSales: onSales,
                 onExpenses: onExpenses,
+                onCreateVoucher: onExpenses,
                 onAdminDashboard: onAdminDashboard,
                 username: username,
                 role: role,
@@ -106,81 +99,84 @@ class TaskPageUI extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    // Top bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 15,
-                      ),
-                      color: Colors.transparent, // transparent to show gradient
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              isSidebarOpen ? Icons.arrow_back_ios : Icons.menu,
-                              color: Colors.orange,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
                             ),
-                            onPressed: toggleSidebar,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            "$username's Tasks",
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                isSidebarOpen
+                                    ? Icons.arrow_back_ios
+                                    : Icons.menu,
+                                color: Colors.orange,
+                              ),
+                              onPressed: toggleSidebar,
                             ),
-                          ),
-                          const Spacer(),
-                          SizedBox(
-                            height: 40,
-                            child: InkWell(
-                              onTap: onAddTask,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
+
+                            const SizedBox(width: 10),
+
+                            Text(
+                              "$username's Tasks",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+
+                            const Spacer(),
+
+                            ElevatedButton.icon(
+                              onPressed: onAddTask,
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              label: const Text(
+                                "Add Task",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
+                                  horizontal: 18,
+                                  vertical: 12,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[850]!.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: Image.asset(
-                                        "assets/images/add.png",
-                                        color: Colors.orangeAccent,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Text(
-                                      "Add Task",
-                                      style: TextStyle(
-                                        color: Colors.orangeAccent,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                    Container(height: 3, color: Colors.orange),
-                    // Status summary
+                    // Status summary + filter on the same line
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 15,
                       ),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          // Status summary boxes
                           _StatusBox(
                             text: "Total Pending: $totalPending",
                             color: Colors.orangeAccent,
@@ -196,33 +192,34 @@ class TaskPageUI extends StatelessWidget {
                             color: Colors.greenAccent,
                             bgOpacity: 0.2,
                           ),
-                        ],
-                      ),
-                    ),
-                    // Status filter
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Wrap(
-                        spacing: 12,
-                        children: statusFilter.keys.map((status) {
-                          return Row(
+
+                          const Spacer(), // Push filter to the right
+                          // Status filter checkboxes
+                          Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Checkbox(
-                                value: statusFilter[status],
-                                onChanged: (val) =>
-                                    onStatusFilterChanged(status, val!),
-                              ),
-                              Text(
-                                status[0].toUpperCase() + status.substring(1),
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          );
-                        }).toList(),
+                            children: statusFilter.keys.map((status) {
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Checkbox(
+                                    value: statusFilter[status],
+                                    onChanged: (val) =>
+                                        onStatusFilterChanged(status, val!),
+                                  ),
+                                  Text(
+                                    status[0].toUpperCase() +
+                                        status.substring(1),
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
                     ),
                     // Task table
@@ -239,201 +236,200 @@ class TaskPageUI extends StatelessWidget {
                                             MediaQuery.of(context).size.width *
                                             0.95,
                                       ),
-                                      margin: const EdgeInsets.only(top: 20),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 50,
+                                        vertical: 20,
+                                      ),
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: const Color.fromARGB(
-                                          255,
-                                          37,
-                                          37,
-                                          37,
-                                        ).withOpacity(0.85),
+                                        color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
                                         boxShadow: const [
                                           BoxShadow(
-                                            color: Colors.black26,
+                                            color: Colors.black12,
                                             blurRadius: 8,
-                                            offset: Offset(2, 2),
+                                            offset: Offset(0, 3),
                                           ),
                                         ],
                                       ),
-                                      child: SingleChildScrollView(
-                                        scrollDirection: Axis.horizontal,
-                                        child: ConstrainedBox(
-                                          constraints: const BoxConstraints(
-                                            minWidth: 900,
-                                          ),
-                                          child: DataTable(
-                                            sortColumnIndex: sortColumnIndex,
-                                            sortAscending: sortAscending,
-                                            columns: [
-                                              DataColumn(
-                                                label: const Text(
-                                                  "ID",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                onSort: (i, asc) => onSort(
-                                                  (t) =>
-                                                      int.tryParse(
-                                                        t['id'].toString(),
-                                                      ) ??
-                                                      0,
-                                                  i,
-                                                  asc,
-                                                ),
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          return SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: ConstrainedBox(
+                                              constraints: BoxConstraints(
+                                                minWidth: constraints.maxWidth,
                                               ),
-                                              DataColumn(
-                                                label: Container(
-                                                  width: 250,
-                                                  child: const Text(
-                                                    "Title",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
+                                              child: DataTable(
+                                                sortColumnIndex:
+                                                    sortColumnIndex,
+                                                sortAscending: sortAscending,
+                                                headingRowColor:
+                                                    MaterialStateProperty.all(
+                                                      Colors.orange.shade100,
+                                                    ),
+                                                headingTextStyle:
+                                                    const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.black87,
+                                                    ),
+                                                dataTextStyle: const TextStyle(
+                                                  color: Colors.black87,
+                                                  fontSize: 15,
+                                                ),
+                                                dividerThickness: 1,
+                                                horizontalMargin: 24,
+                                                columnSpacing: 40,
+                                                border: TableBorder(
+                                                  horizontalInside: BorderSide(
+                                                    width: 0.5,
+                                                    color: Colors.grey.shade300,
+                                                  ),
+                                                ),
+                                                columns: [
+                                                  const DataColumn(
+                                                    label: Text("ID"),
+                                                    numeric: true,
+                                                  ),
+                                                  DataColumn(
+                                                    label: const Text("Title"),
+                                                    onSort: (i, asc) => onSort(
+                                                      (t) => t['title'] ?? '',
+                                                      i,
+                                                      asc,
                                                     ),
                                                   ),
-                                                ),
-                                                onSort: (i, asc) => onSort(
-                                                  (t) => t['title'] ?? '',
-                                                  i,
-                                                  asc,
-                                                ),
-                                              ),
-                                              DataColumn(
-                                                label: const Text(
-                                                  "Created At",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                onSort: (i, asc) => onSort(
-                                                  (t) => t['created_at'] ?? '',
-                                                  i,
-                                                  asc,
-                                                ),
-                                              ),
-                                              DataColumn(
-                                                label: const Text(
-                                                  "Due Date",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                onSort: (i, asc) => onSort(
-                                                  (t) => t['due_date'] ?? '',
-                                                  i,
-                                                  asc,
-                                                ),
-                                              ),
-                                              DataColumn(
-                                                label: const Text(
-                                                  "Status",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                onSort: (i, asc) => onSort(
-                                                  (t) => t['status'] ?? '',
-                                                  i,
-                                                  asc,
-                                                ),
-                                              ),
-                                              const DataColumn(
-                                                label: Text(
-                                                  "Actions",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                            rows: tasks.map<DataRow>((task) {
-                                              return DataRow(
-                                                cells: [
-                                                  DataCell(
-                                                    Text(
-                                                      task['id'].toString(),
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                      ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      "Created At",
+                                                    ),
+                                                    onSort: (i, asc) => onSort(
+                                                      (t) =>
+                                                          t['created_at'] ?? '',
+                                                      i,
+                                                      asc,
                                                     ),
                                                   ),
-                                                  DataCell(
-                                                    Container(
-                                                      width: 250,
-                                                      child: InkWell(
-                                                        onTap: () =>
-                                                            onViewTask(task),
-                                                        child: Text(
-                                                          task['title'] ?? '',
-                                                          style: const TextStyle(
-                                                            color: Colors
-                                                                .blueAccent,
-                                                            decoration:
-                                                                TextDecoration
-                                                                    .underline,
-                                                          ),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                      ),
+                                                  DataColumn(
+                                                    label: const Text(
+                                                      "Due Date",
+                                                    ),
+                                                    onSort: (i, asc) => onSort(
+                                                      (t) =>
+                                                          t['due_date'] ?? '',
+                                                      i,
+                                                      asc,
                                                     ),
                                                   ),
-                                                  DataCell(
-                                                    Text(
-                                                      task['created_at'] ??
-                                                          'N/A',
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                      ),
+                                                  DataColumn(
+                                                    label: const Text("Status"),
+                                                    onSort: (i, asc) => onSort(
+                                                      (t) => t['status'] ?? '',
+                                                      i,
+                                                      asc,
                                                     ),
                                                   ),
-                                                  DataCell(
-                                                    Text(
-                                                      task['due_date'] ?? 'N/A',
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  DataCell(
-                                                    Text(
-                                                      task['status'] ?? '',
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  DataCell(
-                                                    Row(
-                                                      children: [
-                                                        IconButton(
-                                                          icon: const Icon(
-                                                            Icons.edit,
-                                                            color: Colors.blue,
-                                                          ),
-                                                          onPressed: () =>
-                                                              onEditTask(task),
-                                                        ),
-                                                        IconButton(
-                                                          icon: const Icon(
-                                                            Icons.delete,
-                                                            color: Colors.red,
-                                                          ),
-                                                          onPressed: () =>
-                                                              onDeleteTask(
-                                                                task['id'],
-                                                              ),
-                                                        ),
-                                                      ],
-                                                    ),
+                                                  const DataColumn(
+                                                    label: Text("Actions"),
                                                   ),
                                                 ],
-                                              );
-                                            }).toList(),
-                                          ),
-                                        ),
+                                                rows: tasks.map<DataRow>((
+                                                  task,
+                                                ) {
+                                                  Color? rowColor;
+
+                                                  switch (task['status']
+                                                      ?.toLowerCase()) {
+                                                    case 'pending':
+                                                      rowColor = Colors
+                                                          .orange
+                                                          .shade200;
+                                                      break;
+                                                    case 'ongoing':
+                                                      rowColor =
+                                                          Colors.blue.shade200;
+                                                      break;
+                                                    case 'completed':
+                                                      rowColor =
+                                                          Colors.green.shade200;
+                                                      break;
+                                                    default:
+                                                      rowColor = Colors.white;
+                                                  }
+
+                                                  return DataRow(
+                                                    color:
+                                                        MaterialStateProperty.all(
+                                                          rowColor,
+                                                        ),
+                                                    cells: [
+                                                      DataCell(
+                                                        Text(
+                                                          task['id'].toString(),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Container(
+                                                          width: 200,
+                                                          child: Text(
+                                                            task['title'] ?? '',
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          task['created_at'] ??
+                                                              '--',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          task['due_date'] ??
+                                                              '--',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          task['status'] ??
+                                                              '--',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Row(
+                                                          children: [
+                                                            IconButton(
+                                                              icon: const Icon(
+                                                                Icons.edit,
+                                                                color:
+                                                                    Colors.blue,
+                                                              ),
+                                                              onPressed: () =>
+                                                                  onEditTask(
+                                                                    task,
+                                                                  ),
+                                                            ),
+                                                            IconButton(
+                                                              icon: const Icon(
+                                                                Icons.delete,
+                                                                color:
+                                                                    Colors.red,
+                                                              ),
+                                                              onPressed: () =>
+                                                                  onDeleteTask(
+                                                                    task['id'],
+                                                                  ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ],
