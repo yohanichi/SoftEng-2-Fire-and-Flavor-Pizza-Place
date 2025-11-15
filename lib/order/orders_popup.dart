@@ -10,6 +10,7 @@ class OrdersPopup {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String currentUser = prefs.getString("username") ?? "Unknown";
+    String currentRole = prefs.getString("role") ?? "user"; // 👈 NEW
 
     await SalesData().init();
     await SalesData().loadOrders();
@@ -52,6 +53,18 @@ class OrdersPopup {
         'items': items,
       };
     }).toList();
+    // 🔐 Role-based filtering
+    List<Map<String, dynamic>> filteredByRole;
+
+    if (currentRole.toLowerCase() == "manager") {
+      // Manager sees ALL orders
+      filteredByRole = allOrders;
+    } else {
+      // Users only see their own
+      filteredByRole = allOrders.where((order) {
+        return order['handledBy'] == currentUser;
+      }).toList();
+    }
 
     isLoading = false;
 
@@ -74,7 +87,7 @@ class OrdersPopup {
             String formattedDate = DateFormat(
               'MMM dd, yyyy',
             ).format(selectedDate);
-            final filteredOrders = allOrders
+            final filteredOrders = filteredByRole
                 .where((order) => order['orderDate'] == formattedDate)
                 .toList();
 
