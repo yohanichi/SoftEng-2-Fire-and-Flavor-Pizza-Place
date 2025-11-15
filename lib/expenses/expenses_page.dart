@@ -17,6 +17,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'; // add this import
+import 'dart:typed_data';
 
 class Expense {
   int? id;
@@ -63,6 +65,21 @@ class Expense {
       notes: json['notes'] ?? '',
     );
   }
+}
+
+extension ExpenseJson on Expense {
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'date': date,
+    'category': category,
+    'description': description,
+    'vendor': vendor,
+    'quantity': quantity,
+    'unit_price': unitPrice,
+    'total_cost': totalCost,
+    'payment_method': paymentMethod,
+    'notes': notes,
+  };
 }
 
 class ExpensesContent extends StatefulWidget {
@@ -114,81 +131,144 @@ class _ExpensesContentState extends State<ExpensesContent> {
   }
 
   Future<void> _generatePdfReport() async {
+    final filtered = _filteredExpenses;
+    if (filtered.isEmpty) return;
+
+    try {
+      final pdfBytes = await compute(_buildPdfInIsolate, {
+        'expenses': filtered.map((e) => e.toJson()).toList(),
+        'startDate': startDate?.toIso8601String(),
+        'endDate': endDate?.toIso8601String(),
+      });
+
+      await Printing.layoutPdf(onLayout: (format) async => pdfBytes);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error generating PDF: $e')));
+    }
+  }
+
+  List<List<Expense>> chunkExpenses(List<Expense> expenses, int chunkSize) {
+    List<List<Expense>> chunks = [];
+    for (var i = 0; i < expenses.length; i += chunkSize) {
+      chunks.add(
+        expenses.sublist(
+          i,
+          i + chunkSize > expenses.length ? expenses.length : i + chunkSize,
+        ),
+      );
+    }
+    return chunks;
+  }
+
+  // Function that runs in a background isolate
+  // Replace your existing _buildPdfInIsolate with this:
+
+  Future<Uint8List> _buildPdfInIsolate(Map<String, dynamic> params) async {
+    final List<Map<String, dynamic>> expensesMap =
+        List<Map<String, dynamic>>.from(params['expenses']);
+    final DateTime? startDate = params['startDate'] != null
+        ? DateTime.parse(params['startDate'])
+        : null;
+    final DateTime? endDate = params['endDate'] != null
+        ? DateTime.parse(params['endDate'])
+        : null;
+
+    final currencyFormatter = NumberFormat('#,##0.00');
     final pdf = pw.Document();
 
-    // Load the font from assets
+    // Load font in isolate
     final fontData = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
     final ttf = pw.Font.ttf(fontData);
 
-    final filtered = _filteredExpenses;
+    // Convert Map back to Expense objects
+    final List<Expense> expenses = expensesMap
+        .map((e) => Expense.fromJson(e))
+        .toList();
+
+    // Group expenses by date
+    final Map<String, List<Expense>> expensesByDate = {};
+    for (var e in expenses) {
+      final date = DateFormat('MM/dd/yyyy').format(DateTime.parse(e.date));
+      expensesByDate.putIfAbsent(date, () => []).add(e);
+    }
 
     final now = DateTime.now();
     final generatedAt = DateFormat('MM/dd/yyyy HH:mm:ss').format(now);
 
-    // Group expenses by date
-    final Map<String, List<Expense>> expensesByDate = {};
-    for (var e in filtered) {
-      final date = DateFormat('MM/dd/yyyy').format(DateTime.parse(e.date));
-      if (!expensesByDate.containsKey(date)) {
-        expensesByDate[date] = [];
-      }
-      expensesByDate[date]!.add(e);
-    }
-
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          // PDF generation date and time at top-left
-          pw.Align(
-            alignment: pw.Alignment.topLeft,
-            child: pw.Text(
-              'Generated: $generatedAt',
-              style: pw.TextStyle(
-                font: ttf,
-                fontSize: 9,
-                color: PdfColors.grey800,
+        build: (context) {
+          List<pw.Widget> widgets = [];
+
+          // Header
+          widgets.add(
+            pw.Align(
+              alignment: pw.Alignment.topLeft,
+              child: pw.Text(
+                'Generated: $generatedAt',
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 9,
+                  color: PdfColors.grey800,
+                ),
               ),
             ),
-          ),
-          pw.SizedBox(height: 4),
-          // Title
-          pw.Text(
-            'Expenses Report',
-            style: pw.TextStyle(
-              font: ttf,
-              fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 8),
-          if (startDate != null || endDate != null)
+          );
+          widgets.add(pw.SizedBox(height: 4));
+          widgets.add(
             pw.Text(
-              'Date Range: ${startDate != null ? DateFormat('MM/dd/yyyy').format(startDate!) : 'All'} - ${endDate != null ? DateFormat('MM/dd/yyyy').format(endDate!) : 'All'}',
-              style: pw.TextStyle(font: ttf, fontSize: 10),
+              'Expenses Report',
+              style: pw.TextStyle(
+                font: ttf,
+                fontSize: 18,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
-          pw.SizedBox(height: 8),
+          );
+          widgets.add(pw.SizedBox(height: 8));
+          if (startDate != null || endDate != null) {
+            widgets.add(
+              pw.Text(
+                'Date Range: ${startDate != null ? DateFormat('MM/dd/yyyy').format(startDate) : 'All'} - ${endDate != null ? DateFormat('MM/dd/yyyy').format(endDate) : 'All'}',
+                style: pw.TextStyle(font: ttf, fontSize: 10),
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 8));
+          }
 
-          // Generate a table for each date
-          ...expensesByDate.entries.map((entry) {
+          // Build tables per date in chunks
+          expensesByDate.entries.forEach((entry) {
             final date = entry.key;
             final expenses = entry.value;
 
-            return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                // Date header
-                pw.Text(
-                  date,
-                  style: pw.TextStyle(
-                    font: ttf,
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#4F4F4F'), // dark grey
-                  ),
+            // Date header
+            widgets.add(
+              pw.Text(
+                date,
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#4F4F4F'),
                 ),
-                pw.SizedBox(height: 4),
-                // Table without the Date column
+              ),
+            );
+            widgets.add(pw.SizedBox(height: 4));
+
+            // Chunk table rows to avoid TooManyPagesException
+            const int chunkSize = 30;
+            for (var i = 0; i < expenses.length; i += chunkSize) {
+              final chunk = expenses.sublist(
+                i,
+                i + chunkSize > expenses.length
+                    ? expenses.length
+                    : i + chunkSize,
+              );
+
+              widgets.add(
                 pw.Table.fromTextArray(
                   headers: [
                     'Category',
@@ -199,7 +279,7 @@ class _ExpensesContentState extends State<ExpensesContent> {
                     'Unit Price',
                     'Total',
                   ],
-                  data: expenses
+                  data: chunk
                       .map(
                         (e) => [
                           e.category,
@@ -228,25 +308,33 @@ class _ExpensesContentState extends State<ExpensesContent> {
                     width: 0.5,
                   ),
                 ),
-                pw.SizedBox(height: 12),
-              ],
-            );
-          }).toList(),
+              );
+              widgets.add(pw.SizedBox(height: 12));
+            }
+          });
 
-          // Total Expenses
-          pw.Text(
-            'Total Expenses: ₱${currencyFormatter.format(_calculateTotal(filtered))}',
-            style: pw.TextStyle(
-              font: ttf,
-              fontSize: 12,
-              fontWeight: pw.FontWeight.bold,
+          // Total Expenses at bottom
+          final totalExpenses = expenses.fold(
+            0.0,
+            (sum, e) => sum + e.totalCost,
+          );
+          widgets.add(
+            pw.Text(
+              'Total Expenses: ₱${currencyFormatter.format(totalExpenses)}',
+              style: pw.TextStyle(
+                font: ttf,
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          );
+
+          return widgets;
+        },
       ),
     );
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    return pdf.save();
   }
 
   Map<String, List<Expense>> get _expensesByDate {
@@ -446,7 +534,9 @@ class _ExpensesContentState extends State<ExpensesContent> {
                   date: DateFormat('yyyy-MM-dd').format(_selectedDate),
                   category: _selectedCategory ?? "",
                   description: _descriptionController.text.trim(),
-                  vendor: "",
+                  vendor: _selectedCategory == "Labor"
+                      ? "N/A"
+                      : "", // automatically N/A for Labor
                   quantity: 1,
                   unitPrice: double.parse(_unitPriceController.text.trim()),
                   totalCost: double.parse(_unitPriceController.text.trim()),
