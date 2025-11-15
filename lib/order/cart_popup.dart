@@ -918,8 +918,13 @@ class _CartPopupPageState extends State<CartPopupPage> {
                               child: TextField(
                                 focusNode: _paymentFocusNode,
                                 controller: _paymentController,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [ThousandsFormatter()],
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                inputFormatters: [
+                                  DecimalTextInputFormatter(decimalRange: 2),
+                                ], // <-- change here
                                 decoration: InputDecoration(
                                   labelText: "Amount Paid",
                                   labelStyle: const TextStyle(
@@ -1107,5 +1112,42 @@ class _HoverButtonState extends State<_HoverButton> {
         ),
       ),
     );
+  }
+}
+
+class DecimalTextInputFormatter extends TextInputFormatter {
+  final int decimalRange;
+  DecimalTextInputFormatter({this.decimalRange = 2})
+    : assert(decimalRange >= 0);
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text;
+
+    // Allow empty string
+    if (text.isEmpty) return newValue;
+
+    // Only digits and dot
+    if (!RegExp(r'^\d*\.?\d*$').hasMatch(text)) {
+      return oldValue;
+    }
+
+    // Only one dot
+    if (text.indexOf('.') != text.lastIndexOf('.')) {
+      return oldValue;
+    }
+
+    // Limit decimal places
+    if (text.contains('.')) {
+      final parts = text.split('.');
+      if (parts.length > 1 && parts[1].length > decimalRange) {
+        return oldValue;
+      }
+    }
+
+    return newValue;
   }
 }
