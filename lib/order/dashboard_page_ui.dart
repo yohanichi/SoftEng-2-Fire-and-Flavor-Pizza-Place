@@ -280,7 +280,7 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                       ),
                     );
                   } else {
-                    _showAccessDeniedDialog(context, "Voucher Managment");
+                    _showAccessDeniedDialog(context, "Voucher Management");
                   }
                 },
                 username: widget.currentUsername,
@@ -342,6 +342,14 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
           isSidebarOpen: widget.isSidebarOpen,
           toggleSidebar: widget.toggleSidebar,
           onLogout: widget.onLogout,
+        );
+      case "Voucher Management":
+        return VoucherPage(
+          userId: widget.userId,
+          username: widget.currentUsername,
+          role: widget.currentRole,
+          isSidebarOpen: widget.isSidebarOpen,
+          toggleSidebar: widget.toggleSidebar,
         );
       default:
         return Center(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import 'package:my_application/vouchers/create_voucher.dart';
 import '../widgets/sidebar.dart';
 import '../tasks/task_page.dart';
 import '../materials/manager_page.dart';
@@ -850,6 +851,20 @@ class _ExpensesContentState extends State<ExpensesContent> {
                       isSidebarOpen: widget.isSidebarOpen,
                       toggleSidebar: widget.toggleSidebar,
                       onLogout: widget.onLogout,
+                    ),
+                  ),
+                );
+              },
+              onCreateVoucher: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => VoucherPage(
+                      username: widget.username,
+                      role: widget.role,
+                      userId: widget.userId,
+                      isSidebarOpen: widget.isSidebarOpen,
+                      toggleSidebar: widget.toggleSidebar,
                     ),
                   ),
                 );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_application/vouchers/create_voucher.dart';
 import '../widgets/sidebar.dart';
 import '../menu_management/menu_management_page.dart';
 import '../inventory/inventory_page.dart';
@@ -151,7 +152,20 @@ class ManagerPageUI extends StatelessWidget {
                 _showAccessDeniedDialog(context, "Expenses");
               }
             },
-
+            onCreateVoucher: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => VoucherPage(
+                    username: username,
+                    role: role,
+                    userId: userId,
+                    isSidebarOpen: isSidebarOpen,
+                    toggleSidebar: toggleSidebar,
+                  ),
+                ),
+              );
+            },
             username: username,
             role: role,
             userId: userId,

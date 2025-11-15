@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:my_application/vouchers/create_voucher.dart';
 import 'sales_data.dart';
 import '../widgets/sidebar.dart';
 import '../tasks/task_page.dart';
@@ -605,6 +606,20 @@ class _SalesContentState extends State<SalesContent> {
                 );
               },
               onSales: () {},
+              onCreateVoucher: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => VoucherPage(
+                      username: widget.username,
+                      role: widget.role,
+                      userId: widget.userId,
+                      isSidebarOpen: widget.isSidebarOpen,
+                      toggleSidebar: widget.toggleSidebar,
+                    ),
+                  ),
+                );
+              },
               username: widget.username,
               role: widget.role,
               userId: widget.userId,

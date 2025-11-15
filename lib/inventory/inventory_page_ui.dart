@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_application/vouchers/create_voucher.dart';
 import 'material_details_page.dart';
 import '../widgets/sidebar.dart';
 import '../tasks/task_page.dart';
@@ -226,7 +227,20 @@ class InventoryUI extends StatelessWidget {
                     _showAccessDeniedDialog(context, "Sales");
                   }
                 },
-
+                onCreateVoucher: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => VoucherPage(
+                        username: username,
+                        role: role,
+                        userId: userId,
+                        isSidebarOpen: isSidebarOpen,
+                        toggleSidebar: toggleSidebar,
+                      ),
+                    ),
+                  );
+                },
                 onExpenses: () {
                   if (role.toLowerCase() == "manager") {
                     Navigator.push(

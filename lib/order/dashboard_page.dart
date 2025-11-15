@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:my_application/vouchers/create_voucher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../home/dash.dart';
@@ -174,7 +175,20 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         );
         break;
-
+      case "Voucher Management":
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VoucherPage(
+              username: currentUsername,
+              role: currentRole,
+              userId: userId,
+              isSidebarOpen: widget.isSidebarOpen,
+              toggleSidebar: widget.toggleSidebar,
+            ),
+          ),
+        );
+        break;
       case "task":
         Navigator.push(
           context,
@@ -217,6 +231,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ? () => _navigateTo("menu")
           : null,
       onTaskPage: () => _navigateTo("task"),
+      onCreateVoucher: () => _navigateTo("Voucher Management"),
       onLogout: _logoutAndGoToDash,
       onEditProfile: _editProfile,
       activePage: _activePage,
