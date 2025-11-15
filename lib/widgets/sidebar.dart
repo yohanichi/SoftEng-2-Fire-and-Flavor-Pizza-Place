@@ -67,15 +67,20 @@ class _SidebarState extends State<Sidebar> {
       "label": "Materials Records",
       "icon": "assets/images/manager.png",
     },
-    "inventory": {"label": "Inventory", "icon": "assets/images/inventory.png"},
+    "inventory": {
+      "label": "Inventory Management",
+      "icon": "assets/images/inventory.png",
+    },
     "menu": {"label": "Menu Management", "icon": "assets/images/menu.png"},
-    "sales": {"label": "Sales", "icon": "assets/images/sales.png"},
-    "expenses": {"label": "Expenses", "icon": "assets/images/expenses.png"},
-    "tasks": {"label": "Tasks", "icon": "assets/images/task.png"},
-    "addons": {"label": "Addons", "icon": "assets/images/addon.png"},
+    "sales": {"label": "Sales Report", "icon": "assets/images/sales.png"},
+    "expenses": {
+      "label": "Expenses Report",
+      "icon": "assets/images/expenses.png",
+    },
+    "tasks": {"label": "Tasks Report", "icon": "assets/images/task.png"},
     "Voucher Management": {
       "label": "Voucher Management",
-      "icon": "assets/images/voucher.png",
+      "icon": "assets/images/vouchers.png",
     },
   };
 
@@ -97,7 +102,7 @@ class _SidebarState extends State<Sidebar> {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      width: widget.isSidebarOpen ? 220 : 65,
+      width: widget.isSidebarOpen ? 250 : 65,
       decoration: BoxDecoration(
         color: Colors.grey[50],
         boxShadow: [
@@ -211,7 +216,7 @@ class _SidebarState extends State<Sidebar> {
 
           _SidebarItem(
             imagePath: "assets/images/dashboard.png",
-            label: "Menu",
+            label: "Menu Management",
             isOpen: widget.isSidebarOpen && showText,
             onTap: widget.onDashboard,
             hovered: hoveredLabel == "Dashboard",
@@ -256,7 +261,7 @@ class _SidebarState extends State<Sidebar> {
               widget.onInventory != null)
             _SidebarItem(
               imagePath: "assets/images/inventory.png",
-              label: "Inventory",
+              label: "Inventory Management",
               isOpen: widget.isSidebarOpen && showText,
               onTap: widget.onInventory,
               hovered: hoveredLabel == "Inventory",
@@ -283,7 +288,7 @@ class _SidebarState extends State<Sidebar> {
           if (widget.role.toLowerCase() == "manager" && widget.onSales != null)
             _SidebarItem(
               imagePath: "assets/images/sales.png",
-              label: "Sales",
+              label: "Sales Report",
               isOpen: widget.isSidebarOpen && showText,
               onTap: widget.onSales,
               hovered: hoveredLabel == "Sales",
@@ -297,7 +302,7 @@ class _SidebarState extends State<Sidebar> {
               widget.onExpenses != null)
             _SidebarItem(
               imagePath: "assets/images/expenses.png",
-              label: "Expenses",
+              label: "Expenses Report",
               isOpen: widget.isSidebarOpen && showText,
               onTap: widget.onExpenses,
               hovered: hoveredLabel == "Expenses",
@@ -323,7 +328,7 @@ class _SidebarState extends State<Sidebar> {
 
           _SidebarItem(
             imagePath: "assets/images/task.png",
-            label: "Tasks",
+            label: "Tasks Report",
             isOpen: widget.isSidebarOpen && showText,
             onTap: widget.onTaskPage,
             hovered: hoveredLabel == "Tasks",
