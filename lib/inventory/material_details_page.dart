@@ -122,16 +122,31 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
   Future<void> _deductStock() async {
     final qtyText = _deductQtyController.text.trim();
     final reason = _deductReasonController.text.trim();
+
+    // Validate if quantity and reason are both provided
     if (qtyText.isEmpty || reason.isEmpty) {
       _showSnack("Please enter both quantity and reason.");
       return;
     }
+
+    // Try parsing the quantity as a double
+    double quantity = 0.0;
+    try {
+      quantity = double.parse(qtyText);
+    } catch (e) {
+      _showSnack("Invalid quantity format. Please enter a valid number.");
+      return;
+    }
+
+    // Now proceed with the stock deduction request
     try {
       final res = await http.post(
         Uri.parse('${widget.apiBase}/inventory/stock_out.php'),
         body: {
           'material_id': widget.materialId,
-          'quantity': int.parse(qtyText).toString(),
+          'quantity': quantity.toStringAsFixed(
+            2,
+          ), // Ensure 2 decimal places when sending
           'reason': reason,
           'user_id': widget.userId,
         },
@@ -217,7 +232,7 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
                         RegExp(r'^\d*\.?\d{0,2}'),
-                      ), // allows up to 2 decimal places
+                      ), // allow decimals
                     ],
                     decoration: InputDecoration(
                       labelText:
@@ -225,6 +240,7 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
+
                   const SizedBox(height: 12),
                   TextField(
                     controller: _deductReasonController,
