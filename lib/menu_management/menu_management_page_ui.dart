@@ -10,6 +10,7 @@ import '../addons/addon_page.dart';
 import '../addons/add_menu_addon_page.dart';
 import '../home/dash.dart';
 import '../tasks/task_page.dart';
+import '../vouchers/create_voucher.dart';
 
 class MenuManagementPageUI extends StatefulWidget {
   final bool isSidebarOpen;
@@ -482,6 +483,24 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
                     );
                   } else {
                     _showAccessDeniedDialog(context, "Expenses");
+                  }
+                },
+                onCreateVoucher: () {
+                  if (widget.role.toLowerCase() == "manager") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VoucherPage(
+                          userId: widget.userId,
+                          username: widget.username,
+                          role: widget.role,
+                          isSidebarOpen: widget.isSidebarOpen,
+                          toggleSidebar: widget.toggleSidebar,
+                        ),
+                      ),
+                    );
+                  } else {
+                    _showAccessDeniedDialog(context, "Voucher Managment");
                   }
                 },
                 username: widget.username,

@@ -10,6 +10,7 @@ import '../sales/sales_page.dart';
 import '../expenses/expenses_page.dart';
 import 'show_order_popup.dart';
 import 'orders_popup.dart';
+import '../vouchers/create_voucher.dart';
 
 class PizzaDashboardPage extends StatefulWidget {
   final bool isSidebarOpen;
@@ -24,6 +25,7 @@ class PizzaDashboardPage extends StatefulWidget {
   final VoidCallback? onExpenses;
   final VoidCallback? onTaskPage;
   final VoidCallback? onInventory;
+  final VoidCallback? onCreateVoucher;
   final String currentUsername;
   final String currentRole;
   final String userId;
@@ -60,6 +62,7 @@ class PizzaDashboardPage extends StatefulWidget {
     this.onExpenses,
     this.onTaskPage,
     this.onInventory,
+    this.onCreateVoucher,
     this.onRefreshMenu,
   });
 
@@ -260,6 +263,24 @@ class _PizzaDashboardPageState extends State<PizzaDashboardPage> {
                     );
                   } else {
                     _showAccessDeniedDialog(context, "Expenses");
+                  }
+                },
+                onCreateVoucher: () {
+                  if (widget.currentRole.toLowerCase() == "manager") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => VoucherPage(
+                          userId: widget.userId,
+                          username: widget.currentUsername,
+                          role: widget.currentRole,
+                          isSidebarOpen: widget.isSidebarOpen,
+                          toggleSidebar: widget.toggleSidebar,
+                        ),
+                      ),
+                    );
+                  } else {
+                    _showAccessDeniedDialog(context, "Voucher Managment");
                   }
                 },
                 username: widget.currentUsername,

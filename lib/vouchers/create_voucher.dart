@@ -2,11 +2,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../home/dash.dart';
+import '../widgets/sidebar.dart';
+import '../tasks/task_page.dart';
+import '../inventory/inventory_page.dart';
+import '../sales/sales_page.dart';
+import '../expenses/expenses_page.dart';
+import '../Order/dashboard_page.dart';
+import '../materials/manager_page.dart';
+import '../menu_management/menu_management_page.dart';
 import 'assign_vouchers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+// ================== VOUCHER PAGE UI ==================
 class VoucherPageUI extends StatelessWidget {
   final bool isSidebarOpen;
   final VoidCallback toggleSidebar;
@@ -45,6 +54,24 @@ class VoucherPageUI extends StatelessWidget {
     required this.onLogout,
   });
 
+  void _showAccessDeniedDialog(BuildContext context, String pageName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Access Denied"),
+        content: Text(
+          "You don’t have permission to access $pageName. This page is only available to Managers.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy-MM-dd');
@@ -53,6 +80,145 @@ class VoucherPageUI extends StatelessWidget {
       backgroundColor: const Color(0xFFF6F7FB),
       body: Row(
         children: [
+          // ===== SIDEBAR =====
+          Sidebar(
+            isSidebarOpen: isSidebarOpen,
+            onHome: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => dash()),
+              );
+            },
+            onDashboard: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DashboardPage(
+                    username: username,
+                    role: role,
+                    userId: userId,
+                    isSidebarOpen: isSidebarOpen,
+                    toggleSidebar: toggleSidebar,
+                  ),
+                ),
+              );
+            },
+            onTaskPage: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TaskPage(
+                    username: username,
+                    role: role,
+                    userId: userId,
+                    isSidebarOpen: isSidebarOpen,
+                    toggleSidebar: toggleSidebar,
+                  ),
+                ),
+              );
+            },
+            onMaterials: () {
+              if (role.toLowerCase() == "manager") {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ManagerPage(
+                      username: username,
+                      role: role,
+                      userId: userId,
+                      isSidebarOpen: isSidebarOpen,
+                      toggleSidebar: toggleSidebar,
+                    ),
+                  ),
+                );
+              } else {
+                _showAccessDeniedDialog(context, "Materials Records");
+              }
+            },
+            onInventory: () {
+              if (role.toLowerCase() == "manager") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InventoryManagementPage(
+                      userId: userId,
+                      username: username,
+                      role: role,
+                      isSidebarOpen: isSidebarOpen,
+                      toggleSidebar: toggleSidebar,
+                      onLogout: onLogout,
+                    ),
+                  ),
+                );
+              } else {
+                _showAccessDeniedDialog(context, "Inventory");
+              }
+            },
+            onMenu: () {
+              if (role.toLowerCase() == "manager") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MenuManagementPage(
+                      userId: userId,
+                      username: username,
+                      role: role,
+                      isSidebarOpen: isSidebarOpen,
+                      toggleSidebar: toggleSidebar,
+                    ),
+                  ),
+                );
+              } else {
+                _showAccessDeniedDialog(context, "Menu");
+              }
+            },
+            onSales: () {
+              if (role.toLowerCase() == "manager") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SalesContent(
+                      userId: userId,
+                      username: username,
+                      role: role,
+                      isSidebarOpen: isSidebarOpen,
+                      toggleSidebar: toggleSidebar,
+                      onLogout: onLogout,
+                    ),
+                  ),
+                );
+              } else {
+                _showAccessDeniedDialog(context, "Sales");
+              }
+            },
+            onExpenses: () {
+              if (role.toLowerCase() == "manager") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExpensesContent(
+                      userId: userId,
+                      username: username,
+                      role: role,
+                      isSidebarOpen: isSidebarOpen,
+                      toggleSidebar: toggleSidebar,
+                      onLogout: onLogout,
+                    ),
+                  ),
+                );
+              } else {
+                _showAccessDeniedDialog(context, "Expenses");
+              }
+            },
+            onCreateVoucher: onAddEntry,
+            username: username,
+            role: role,
+            userId: userId,
+            onLogout: onLogout,
+            activePage: "Voucher Management",
+          ),
+
+          // ===== MAIN CONTENT =====
           Expanded(
             child: Column(
               children: [
@@ -72,8 +238,7 @@ class VoucherPageUI extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: // Top bar buttons
-                  Row(
+                  child: Row(
                     children: [
                       IconButton(
                         icon: Icon(
@@ -92,8 +257,6 @@ class VoucherPageUI extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-
-                      // Show Hidden / Visible Vouchers
                       ElevatedButton.icon(
                         onPressed: onShowHiddenToggle,
                         icon: Icon(
@@ -118,12 +281,8 @@ class VoucherPageUI extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-
-                      // ✅ Assign Vouchers Button
                       ElevatedButton.icon(
-                        onPressed: () {
-                          showAssignVoucherPopup(context); // opens popup
-                        },
+                        onPressed: () => showAssignVoucherPopup(context),
                         icon: const Icon(Icons.assignment, color: Colors.white),
                         label: const Text(
                           "Assign Vouchers",
@@ -141,8 +300,6 @@ class VoucherPageUI extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-
-                      // Add Voucher Button
                       ElevatedButton.icon(
                         onPressed: onAddEntry,
                         icon: const Icon(Icons.add, color: Colors.white),
@@ -271,7 +428,6 @@ class VoucherPageUI extends StatelessWidget {
                                                         : "",
                                                   ),
                                                 ),
-
                                                 DataCell(
                                                   Text(voucher['status'] ?? ""),
                                                 ),
@@ -328,7 +484,7 @@ class VoucherPageUI extends StatelessWidget {
                         ),
                 ),
 
-                // Status label
+                // Status Label
                 Padding(
                   padding: const EdgeInsets.only(top: 10, bottom: 30),
                   child: AnimatedSwitcher(
@@ -380,8 +536,7 @@ class VoucherPageUI extends StatelessWidget {
   }
 }
 
-// ================== STATEFUL PAGE ==================
-
+// ================== STATEFUL VOUCHER PAGE ==================
 class VoucherPage extends StatefulWidget {
   final String username;
   final String role;
@@ -409,7 +564,7 @@ class _VoucherPageState extends State<VoucherPage> {
   bool showHidden = false;
   int? sortColumnIndex;
   bool sortAscending = true;
-  bool _isSidebarOpen = false;
+  late bool _isSidebarOpen;
 
   @override
   void initState() {
@@ -417,6 +572,8 @@ class _VoucherPageState extends State<VoucherPage> {
     _isSidebarOpen = widget.isSidebarOpen;
     _initApi();
   }
+
+  void toggleSidebar() => setState(() => _isSidebarOpen = !_isSidebarOpen);
 
   Future<void> _initApi() async {
     apiBase = "${await ApiConfig.getBaseUrl()}/vouchers";
@@ -427,9 +584,8 @@ class _VoucherPageState extends State<VoucherPage> {
     setState(() => isLoading = true);
     try {
       final res = await http.get(Uri.parse("$apiBase/list.php?fetch=vouchers"));
-      if (res.statusCode == 200) {
+      if (res.statusCode == 200)
         setState(() => vouchers = jsonDecode(res.body));
-      }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -473,7 +629,6 @@ class _VoucherPageState extends State<VoucherPage> {
                         ? "No date selected"
                         : "Expires: ${DateFormat('MM/dd/yyyy').format(pickedDate!)}",
                   ),
-
                   const Spacer(),
                   ElevatedButton(
                     onPressed: () async {
@@ -546,8 +701,6 @@ class _VoucherPageState extends State<VoucherPage> {
     final data = jsonDecode(res.body);
     if (data['success'] == true) fetchVouchers();
   }
-
-  void toggleSidebar() => setState(() => _isSidebarOpen = !_isSidebarOpen);
 
   @override
   Widget build(BuildContext context) {

@@ -2,19 +2,16 @@ import 'package:flutter/material.dart';
 
 class Sidebar extends StatefulWidget {
   final bool isSidebarOpen;
-  final VoidCallback onHome;
-  final VoidCallback onDashboard;
-  final VoidCallback onTaskPage;
+  final VoidCallback? onHome; // made nullable
+  final VoidCallback? onDashboard; // made nullable
+  final VoidCallback? onTaskPage; // made nullable
   final VoidCallback? onMaterials;
   final VoidCallback? onMenu;
   final VoidCallback? onAdminDashboard;
   final VoidCallback? onSales;
   final VoidCallback? onExpenses;
   final VoidCallback? onInventory;
-  final VoidCallback? onAddons; // Add this in the Sidebar class
-  final VoidCallback? onAddMenuAddon; // 👈 add this
   final VoidCallback? onCreateVoucher;
-  final VoidCallback? onAssignVoucher;
   final String username;
   final String role;
   final String userId;
@@ -24,19 +21,16 @@ class Sidebar extends StatefulWidget {
 
   const Sidebar({
     required this.isSidebarOpen,
-    required this.onHome,
-    required this.onDashboard,
-    required this.onTaskPage,
+    this.onHome, // optional
+    this.onDashboard, // optional
+    this.onTaskPage, // optional
     this.onMaterials,
     this.onMenu,
     this.onAdminDashboard,
     this.onSales,
     this.onExpenses,
     this.onInventory,
-    this.onAddons,
-    this.onAddMenuAddon, // 👈 include here
     this.onCreateVoucher,
-    this.onAssignVoucher,
     required this.username,
     required this.role,
     required this.userId,
@@ -79,6 +73,10 @@ class _SidebarState extends State<Sidebar> {
     "expenses": {"label": "Expenses", "icon": "assets/images/expenses.png"},
     "tasks": {"label": "Tasks", "icon": "assets/images/task.png"},
     "addons": {"label": "Addons", "icon": "assets/images/addon.png"},
+    "Voucher Management": {
+      "label": "Voucher Management",
+      "icon": "assets/images/voucher.png",
+    },
   };
 
   @override
@@ -307,6 +305,20 @@ class _SidebarState extends State<Sidebar> {
               gradientColors: gradientColors,
               onHover: (hovering) =>
                   setState(() => hoveredLabel = hovering ? "Expenses" : null),
+            ),
+          if (widget.role.toLowerCase() == "manager" &&
+              widget.onCreateVoucher != null)
+            _SidebarItem(
+              imagePath: "assets/images/vouchers.png",
+              label: "Voucher Management",
+              isOpen: widget.isSidebarOpen && showText,
+              onTap: widget.onCreateVoucher,
+              hovered: hoveredLabel == "Voucher Management",
+              isActive: widget.activePage == "Voucher Management",
+              gradientColors: gradientColors,
+              onHover: (hovering) => setState(
+                () => hoveredLabel = hovering ? "Voucher Management" : null,
+              ),
             ),
 
           _SidebarItem(
