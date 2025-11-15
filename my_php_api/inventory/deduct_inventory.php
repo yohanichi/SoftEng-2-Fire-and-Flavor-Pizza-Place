@@ -69,43 +69,45 @@ try {
     }
 
     // --- 4. Deduct from inventory_log FIFO and create OUT entries with positive cost ---
-    foreach ($deductions as $material_id => $qty_to_deduct) {
+    function deduct_inventory_log($conn, $material_id, $qty_to_deduct, $user_id) {
+        $reason = "Auto Deduction from Customer Order";
+
         while ($qty_to_deduct > 0) {
+            // Fetch the oldest available inventory log entry
             $stmt = $conn->prepare("
-                SELECT id, quantity, unit, expiration_date, cost 
-                FROM inventory_log 
-                WHERE material_id = ? AND quantity > 0 
+                SELECT id, quantity, unit, expiration_date, cost
+                FROM inventory_log
+                WHERE material_id = ? AND quantity > 0
                 ORDER BY expiration_date ASC, id ASC
                 LIMIT 1
             ");
             $stmt->bind_param("i", $material_id);
             $stmt->execute();
-            $res = $stmt->get_result();
-            $log_entry = $res->fetch_assoc();
+            $log_entry = $stmt->get_result()->fetch_assoc();
             $stmt->close();
 
             if (!$log_entry) {
                 throw new Exception("Not enough stock for material ID $material_id in inventory_log");
             }
 
+            // Determine how much to deduct from this entry
             $deduct_qty = min($qty_to_deduct, $log_entry['quantity']);
-            $unit_cost = floatval($log_entry['cost']); // positive cost
+            $unit_cost = floatval($log_entry['cost']);
             $total_cost = $deduct_qty * $unit_cost;
 
-            // a) Reduce existing log entry
+            // Deduct from the existing log entry
             $stmt = $conn->prepare("UPDATE inventory_log SET quantity = quantity - ? WHERE id = ?");
             $stmt->bind_param("di", $deduct_qty, $log_entry['id']);
             $stmt->execute();
             $stmt->close();
 
-            // b) Create OUT entry with negative quantity but positive cost
+            // Create OUT entry
             $stmt = $conn->prepare("
                 INSERT INTO inventory_log 
                     (material_id, quantity, unit, expiration_date, reason, user_id, cost, total_cost)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $negative_qty = -$deduct_qty;
-            $reason = "Auto Deduction from Customer Order";
             $stmt->bind_param(
                 "idsssidd",
                 $material_id,
@@ -123,6 +125,12 @@ try {
             $qty_to_deduct -= $deduct_qty;
         }
     }
+
+    // --- Usage ---
+    foreach ($deductions as $material_id => $qty) {
+        deduct_inventory_log($conn, $material_id, $qty, $user_id);
+    }
+
 
     $conn->commit();
     echo json_encode([

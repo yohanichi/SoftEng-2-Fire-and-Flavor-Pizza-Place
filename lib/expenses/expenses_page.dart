@@ -534,9 +534,7 @@ class _ExpensesContentState extends State<ExpensesContent> {
                   date: DateFormat('yyyy-MM-dd').format(_selectedDate),
                   category: _selectedCategory ?? "",
                   description: _descriptionController.text.trim(),
-                  vendor: _selectedCategory == "Labor"
-                      ? "N/A"
-                      : "", // automatically N/A for Labor
+                  vendor: _selectedCategory == "Labor" ? "N/A" : "",
                   quantity: 1,
                   unitPrice: double.parse(_unitPriceController.text.trim()),
                   totalCost: double.parse(_unitPriceController.text.trim()),
