@@ -123,7 +123,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final response = await http.post(
-        Uri.parse("/user/update_user.php"),
+        Uri.parse("$apiBase/user/update_user.php"),
         body: body,
       );
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/sidebar.dart';
+import 'package:intl/intl.dart';
 
 class TaskPageUI extends StatelessWidget {
   final bool isSidebarOpen;
@@ -370,25 +371,78 @@ class TaskPageUI extends StatelessWidget {
                                                         ),
                                                       ),
                                                       DataCell(
-                                                        Container(
-                                                          width: 200,
-                                                          child: Text(
-                                                            task['title'] ?? '',
+                                                        InkWell(
+                                                          onTap: () {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder: (_) => AlertDialog(
+                                                                title: Text(
+                                                                  task['title'] ??
+                                                                      '',
+                                                                  style: const TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                                content: SingleChildScrollView(
+                                                                  child: Text(
+                                                                    task['description']?.isNotEmpty ==
+                                                                            true
+                                                                        ? task['description']
+                                                                        : 'No description available.',
+                                                                  ),
+                                                                ),
+                                                                actions: [
+                                                                  TextButton(
+                                                                    onPressed: () =>
+                                                                        Navigator.pop(
+                                                                          context,
+                                                                        ),
+                                                                    child:
+                                                                        const Text(
+                                                                          "Close",
+                                                                        ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                          child: Container(
+                                                            width: 200,
+                                                            child: Text(
+                                                              task['title'] ??
+                                                                  '',
+                                                              style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                decoration:
+                                                                    TextDecoration
+                                                                        .underline,
+                                                                color:
+                                                                    Colors.blue,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+
+                                                      DataCell(
+                                                        Text(
+                                                          formatDate(
+                                                            task['created_at'],
                                                           ),
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
-                                                          task['created_at'] ??
-                                                              '--',
+                                                          formatDate(
+                                                            task['due_date'],
+                                                          ),
                                                         ),
                                                       ),
-                                                      DataCell(
-                                                        Text(
-                                                          task['due_date'] ??
-                                                              '--',
-                                                        ),
-                                                      ),
+
                                                       DataCell(
                                                         Text(
                                                           task['status'] ??
@@ -474,5 +528,15 @@ class _StatusBox extends StatelessWidget {
         style: TextStyle(color: color, fontWeight: FontWeight.bold),
       ),
     );
+  }
+}
+
+String formatDate(String? dateStr) {
+  if (dateStr == null || dateStr.isEmpty) return '--';
+  try {
+    DateTime date = DateTime.parse(dateStr);
+    return DateFormat('MMM dd, yyyy').format(date);
+  } catch (e) {
+    return dateStr;
   }
 }

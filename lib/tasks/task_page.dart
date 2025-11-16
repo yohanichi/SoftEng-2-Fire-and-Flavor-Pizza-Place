@@ -60,12 +60,79 @@ class _TaskPageState extends State<TaskPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    fetchTasks(); // Refresh tasks whenever page is shown
   }
 
   List get filteredTasks {
     if (statusFilter['All'] == true) return tasks;
     return tasks.where((t) => statusFilter[t['status']] == true).toList();
+  }
+
+  void showTaskDescription(Map task) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: const Color.fromARGB(255, 41, 41, 41).withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                task['title'] ?? "Untitled Task",
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orangeAccent,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(
+                "Description:",
+                style: TextStyle(
+                  color: Colors.orangeAccent.shade100,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                task['description'] ?? "(No Description)",
+                style: const TextStyle(color: Colors.white70),
+              ),
+
+              const SizedBox(height: 16),
+
+              Text(
+                "Due Date: ${task['due_date'] ?? 'N/A'}",
+                style: const TextStyle(color: Colors.white70),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                "Status: ${task['status'] ?? 'N/A'}",
+                style: const TextStyle(color: Colors.white70),
+              ),
+
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orangeAccent,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Close"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> fetchTasks() async {
@@ -403,7 +470,8 @@ class _TaskPageState extends State<TaskPage> {
       onAddTask: onAddTask,
       onEditTask: onEditTask,
       onDeleteTask: onDeleteTask,
-      onViewTask: (task) => addOrEditTask(task: task),
+      onViewTask: (task) => showTaskDescription(task),
+
       onHome: onHome,
       onDashboard: () => Navigator.pushReplacement(
         context,

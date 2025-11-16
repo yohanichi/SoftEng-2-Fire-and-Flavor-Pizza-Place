@@ -4,10 +4,15 @@ header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-include "../db.php"; // Make sure $conn = new mysqli(...) is defined in db.php
+include "../db.php";
 
 $action = $_GET['action'] ?? '';
 
+/*
+|-----------------------
+| GET TASKS
+|-----------------------
+*/
 if ($action === 'get') {
     $user_id = $_GET['user_id'] ?? '';
     if (!$user_id) {
@@ -29,6 +34,11 @@ if ($action === 'get') {
     exit;
 }
 
+/*
+|-----------------------
+| ADD TASK
+|-----------------------
+*/
 if ($action === 'add') {
     $user_id = $_POST['user_id'] ?? '';
     $title = $_POST['title'] ?? '';
@@ -43,14 +53,19 @@ if ($action === 'add') {
 
     $stmt = $conn->prepare("INSERT INTO tasks (user_id, title, description, status, due_date) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("issss", $user_id, $title, $description, $status, $due_date);
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Task added successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to add task']);
-    }
+
+    echo json_encode([
+        'success' => $stmt->execute(),
+        'message' => $stmt->execute() ? 'Task added successfully' : 'Failed to add task'
+    ]);
     exit;
 }
 
+/*
+|-----------------------
+| UPDATE TASK
+|-----------------------
+*/
 if ($action === 'update') {
     $id = $_POST['id'] ?? '';
     $title = $_POST['title'] ?? '';
@@ -65,14 +80,19 @@ if ($action === 'update') {
 
     $stmt = $conn->prepare("UPDATE tasks SET title=?, description=?, status=?, due_date=? WHERE id=?");
     $stmt->bind_param("ssssi", $title, $description, $status, $due_date, $id);
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Task updated successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update task']);
-    }
+
+    echo json_encode([
+        'success' => $stmt->execute(),
+        'message' => $stmt->execute() ? 'Task updated successfully' : 'Failed to update task'
+    ]);
     exit;
 }
 
+/*
+|-----------------------
+| DELETE TASK
+|-----------------------
+*/
 if ($action === 'delete') {
     $id = $_POST['id'] ?? '';
     if (!$id) {
@@ -82,14 +102,13 @@ if ($action === 'delete') {
 
     $stmt = $conn->prepare("DELETE FROM tasks WHERE id=?");
     $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Task deleted successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to delete task']);
-    }
+
+    echo json_encode([
+        'success' => $stmt->execute(),
+        'message' => $stmt->execute() ? 'Task deleted successfully' : 'Failed to delete task'
+    ]);
     exit;
 }
 
-// Invalid action
 echo json_encode(['success' => false, 'message' => 'Invalid action']);
 ?>
