@@ -55,7 +55,11 @@ flutter:
         - asset: assets/fonts/DejaVuSans.ttf
         - asset: assets/fonts/DejaVuSans-Bold.ttf
           weight: 700
-
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
   assets:
     - assets/images/
     - assets/icons/

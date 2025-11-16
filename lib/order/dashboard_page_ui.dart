@@ -833,19 +833,14 @@ class MenuGrid extends StatelessWidget {
                       displayWidget,
 
                       const SizedBox(height: 4),
-                      Container(
-                        height: 36,
-                        child: Text(
-                          description,
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.white70,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: true,
+                      Text(
+                        description,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          color: Colors.white70,
                         ),
                       ),
+
                       const Spacer(),
                       Text(
                         "₱${price.toStringAsFixed(2)}",

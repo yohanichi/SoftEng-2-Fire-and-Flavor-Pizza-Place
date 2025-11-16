@@ -570,6 +570,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
       onSearch: _onSearch,
       apiBase: apiBase,
       searchController: searchController,
+      onRefresh: _fetchMaterials, // <-- ADD THIS
     );
   }
 }

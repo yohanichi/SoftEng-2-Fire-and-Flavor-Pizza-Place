@@ -761,7 +761,7 @@ class _CartPopupPageState extends State<CartPopupPage> {
                             "${voucher['name']} - Expires: $formattedDate${isExpired
                                 ? " (Expired)"
                                 : isHidden
-                                ? " (Hidden)"
+                                ? " (Unavailable)"
                                 : ""}",
                             style: TextStyle(
                               color: isExpired || isHidden

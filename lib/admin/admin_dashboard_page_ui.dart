@@ -49,15 +49,12 @@ class AdminDashboardPageUI extends StatelessWidget {
           children: [
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.black.withOpacity(0.95), Colors.grey[900]!],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF6F6F6), // same as Task UI
                 ),
               ),
             ),
+
             Row(
               children: [
                 // ✅ Use main Sidebar
@@ -81,78 +78,78 @@ class AdminDashboardPageUI extends StatelessWidget {
                   child: Column(
                     children: [
                       // Top Bar
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 15,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.black, Colors.grey[900]!],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                isSidebarOpen
-                                    ? Icons.arrow_back_ios
-                                    : Icons.menu,
-                                color: Colors.orange,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 8,
+                                offset: Offset(0, 4),
                               ),
-                              onPressed: toggleSidebar,
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              "Admin Dashboard",
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  isSidebarOpen
+                                      ? Icons.arrow_back_ios
+                                      : Icons.menu,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: toggleSidebar,
                               ),
-                            ),
-                            Spacer(),
-                            SizedBox(
-                              height: 40,
-                              child: InkWell(
-                                onTap: () => openUserDialog(null),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[850]!.withOpacity(0.9),
-                                    borderRadius: BorderRadius.circular(12),
+
+                              const SizedBox(width: 10),
+
+                              Text(
+                                "Admin Dashboard",
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+
+                              const Spacer(),
+
+                              ElevatedButton.icon(
+                                onPressed: () => openUserDialog(null),
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  "Add User",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: Image.asset(
-                                          "assets/images/add.png",
-                                          color: Colors.orangeAccent,
-                                        ),
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        "Add User",
-                                        style: TextStyle(
-                                          color: Colors.orangeAccent,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                      Container(height: 3, color: Colors.orange),
+
                       // Main Container
                       Expanded(
                         child: isLoading
@@ -160,269 +157,248 @@ class AdminDashboardPageUI extends StatelessWidget {
                             : SingleChildScrollView(
                                 child: Center(
                                   child: Container(
-                                    margin: EdgeInsets.all(16),
-                                    padding: EdgeInsets.all(16),
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.of(context).size.width *
+                                          0.95,
+                                    ),
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 50,
+                                      vertical: 20,
+                                    ),
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: Color.fromARGB(
-                                        255,
-                                        37,
-                                        37,
-                                        37,
-                                      ).withOpacity(0.85),
+                                      color: Colors.white, // same as TaskPage
                                       borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
+                                      boxShadow: const [
                                         BoxShadow(
-                                          color: Colors.black26,
+                                          color: Colors.black12,
                                           blurRadius: 8,
-                                          offset: Offset(2, 2),
+                                          offset: Offset(0, 3),
                                         ),
                                       ],
                                     ),
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minWidth: 900,
-                                        ),
-                                        child: DataTable(
-                                          sortColumnIndex: sortColumnIndex,
-                                          sortAscending: sortAscending,
-                                          columnSpacing: 40,
-                                          headingRowHeight: 56,
-                                          dataRowHeight: 56,
-                                          columns: [
-                                            DataColumn(
-                                              label: Text(
-                                                "ID",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              onSort: (i, asc) => onSort(
-                                                (u) =>
-                                                    int.tryParse(
-                                                      u['id'].toString(),
-                                                    ) ??
-                                                    0,
-                                                i,
-                                                asc,
-                                              ),
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        return SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth: constraints.maxWidth,
                                             ),
-                                            DataColumn(
-                                              label: Text(
-                                                "Username",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              onSort: (i, asc) => onSort(
-                                                (u) => u['username'] ?? '',
-                                                i,
-                                                asc,
-                                              ),
-                                            ),
-                                            DataColumn(
-                                              label: Text(
-                                                "Role",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              onSort: (i, asc) => onSort(
-                                                (u) => u['role'] ?? '',
-                                                i,
-                                                asc,
-                                              ),
-                                            ),
-                                            DataColumn(
-                                              label: Text(
-                                                "Email",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              onSort: (i, asc) => onSort(
-                                                (u) => u['email'] ?? '',
-                                                i,
-                                                asc,
-                                              ),
-                                            ),
-                                            DataColumn(
-                                              label: Text(
-                                                "Created At",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              onSort: (i, asc) => onSort(
-                                                (u) => u['created_at'] ?? '',
-                                                i,
-                                                asc,
-                                              ),
-                                            ),
-                                            DataColumn(
-                                              label: Text(
-                                                "Status",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              onSort: (i, asc) => onSort(
-                                                (u) => u['status'] ?? '',
-                                                i,
-                                                asc,
-                                              ),
-                                            ),
-                                            DataColumn(
-                                              label: Text(
-                                                "Actions",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                          rows: users.map<DataRow>((user) {
-                                            int userIdInt =
-                                                int.tryParse(
-                                                  user['id'].toString(),
-                                                ) ??
-                                                0;
-                                            bool isCurrentUser =
-                                                user['username'] ==
-                                                loggedInUsername;
-
-                                            return DataRow(
-                                              color:
-                                                  MaterialStateProperty.resolveWith<
-                                                    Color?
-                                                  >(
-                                                    (states) => isCurrentUser
-                                                        ? Colors.orange
-                                                              .withOpacity(0.2)
-                                                        : null,
+                                            child: DataTable(
+                                              sortColumnIndex: sortColumnIndex,
+                                              sortAscending: sortAscending,
+                                              headingRowColor:
+                                                  MaterialStateProperty.all(
+                                                    Colors.orange.shade100,
                                                   ),
-                                              cells: [
-                                                DataCell(
-                                                  Text(
-                                                    userIdInt.toString(),
-                                                    style: TextStyle(
-                                                      color: Colors.white70,
-                                                    ),
+                                              headingTextStyle: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                                fontSize: 15,
+                                              ),
+                                              dataTextStyle: const TextStyle(
+                                                color: Colors.black87,
+                                                fontSize: 14,
+                                              ),
+                                              dividerThickness: 1,
+                                              horizontalMargin: 24,
+                                              columnSpacing: 40,
+                                              border: TableBorder(
+                                                horizontalInside: BorderSide(
+                                                  width: 0.5,
+                                                  color: Colors.grey.shade300,
+                                                ),
+                                              ),
+                                              columns: [
+                                                DataColumn(
+                                                  label: const Text("ID"),
+                                                  onSort: (i, asc) => onSort(
+                                                    (u) =>
+                                                        int.tryParse(
+                                                          u['id'].toString(),
+                                                        ) ??
+                                                        0,
+                                                    i,
+                                                    asc,
                                                   ),
                                                 ),
-                                                DataCell(
-                                                  Text(
-                                                    user['username'] +
-                                                        (isCurrentUser
-                                                            ? " (You)"
-                                                            : ""),
-                                                    style: TextStyle(
-                                                      fontWeight: isCurrentUser
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                      color: isCurrentUser
-                                                          ? Colors.orangeAccent
-                                                          : Colors.white,
-                                                    ),
+                                                DataColumn(
+                                                  label: const Text("Username"),
+                                                  onSort: (i, asc) => onSort(
+                                                    (u) => u['username'],
+                                                    i,
+                                                    asc,
                                                   ),
                                                 ),
-                                                DataCell(
-                                                  Text(
-                                                    user['role'] ?? '',
-                                                    style: TextStyle(
-                                                      color: Colors.white70,
-                                                    ),
+                                                DataColumn(
+                                                  label: const Text("Role"),
+                                                  onSort: (i, asc) => onSort(
+                                                    (u) => u['role'],
+                                                    i,
+                                                    asc,
                                                   ),
                                                 ),
-                                                DataCell(
-                                                  Text(
-                                                    user['email'] ?? '',
-                                                    style: TextStyle(
-                                                      color: Colors.white70,
-                                                    ),
+                                                DataColumn(
+                                                  label: const Text("Email"),
+                                                  onSort: (i, asc) => onSort(
+                                                    (u) => u['email'],
+                                                    i,
+                                                    asc,
                                                   ),
                                                 ),
-                                                DataCell(
-                                                  Text(
-                                                    user['created_at'] ?? '',
-                                                    style: TextStyle(
-                                                      color: Colors.white70,
-                                                    ),
+                                                DataColumn(
+                                                  label: const Text(
+                                                    "Created At",
+                                                  ),
+                                                  onSort: (i, asc) => onSort(
+                                                    (u) => u['created_at'],
+                                                    i,
+                                                    asc,
                                                   ),
                                                 ),
-                                                DataCell(
-                                                  Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4,
-                                                        ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          (user['status'] ??
-                                                                  'active') ==
-                                                              'active'
-                                                          ? Colors.green
-                                                                .withOpacity(
-                                                                  0.5,
-                                                                )
-                                                          : Colors.red
-                                                                .withOpacity(
-                                                                  0.5,
-                                                                ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                    ),
-                                                    child: Text(
-                                                      (user['status'] ??
-                                                              'active')
-                                                          .toString()
-                                                          .toUpperCase(),
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
+                                                DataColumn(
+                                                  label: const Text("Status"),
+                                                  onSort: (i, asc) => onSort(
+                                                    (u) => u['status'],
+                                                    i,
+                                                    asc,
                                                   ),
                                                 ),
-                                                DataCell(
-                                                  Row(
-                                                    children: [
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          Icons.edit,
-                                                          color: Colors.blue,
-                                                        ),
-                                                        onPressed: () =>
-                                                            openUserDialog(
-                                                              user,
-                                                            ),
-                                                      ),
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          Icons.delete,
-                                                          color: Colors.red,
-                                                        ),
-                                                        onPressed: () =>
-                                                            deleteUser(
-                                                              userIdInt,
-                                                              user['username'],
-                                                              user['role'],
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                                const DataColumn(
+                                                  label: Text("Actions"),
                                                 ),
                                               ],
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
+                                              rows: users.map<DataRow>((user) {
+                                                final bool isCurrentUser =
+                                                    user['username'] ==
+                                                    loggedInUsername;
+
+                                                // Row color for clarity (highlight current user)
+                                                Color rowColor = isCurrentUser
+                                                    ? Colors.orange.shade200
+                                                    : Colors.white;
+
+                                                return DataRow(
+                                                  color:
+                                                      MaterialStateProperty.all(
+                                                        rowColor,
+                                                      ),
+                                                  cells: [
+                                                    DataCell(
+                                                      Text(
+                                                        user['id'].toString(),
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Container(
+                                                        width: 200,
+                                                        child: Text(
+                                                          user['username'] +
+                                                              (isCurrentUser
+                                                                  ? " (You)"
+                                                                  : ""),
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                isCurrentUser
+                                                                ? FontWeight
+                                                                      .bold
+                                                                : FontWeight
+                                                                      .normal,
+                                                            color: isCurrentUser
+                                                                ? Colors.orange
+                                                                : Colors
+                                                                      .black87,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(user['role']),
+                                                    ),
+                                                    DataCell(
+                                                      Text(user['email']),
+                                                    ),
+                                                    DataCell(
+                                                      Text(user['created_at']),
+                                                    ),
+                                                    DataCell(
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              (user['status'] ==
+                                                                          "active"
+                                                                      ? Colors
+                                                                            .greenAccent
+                                                                      : Colors
+                                                                            .redAccent)
+                                                                  .withOpacity(
+                                                                    0.2,
+                                                                  ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                        ),
+                                                        child: Text(
+                                                          user['status']
+                                                              .toString()
+                                                              .toUpperCase(),
+                                                          style:
+                                                              const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Row(
+                                                        children: [
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons.edit,
+                                                              color:
+                                                                  Colors.blue,
+                                                            ),
+                                                            onPressed: () =>
+                                                                openUserDialog(
+                                                                  user,
+                                                                ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons.delete,
+                                                              color: Colors.red,
+                                                            ),
+                                                            onPressed: () =>
+                                                                deleteUser(
+                                                                  int.parse(
+                                                                    user['id']
+                                                                        .toString(),
+                                                                  ),
+                                                                  user['username'],
+                                                                  user['role'],
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),

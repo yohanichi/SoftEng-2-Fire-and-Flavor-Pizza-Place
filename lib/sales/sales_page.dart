@@ -145,12 +145,21 @@ class _SalesContentState extends State<SalesContent> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
+
     if (picked != null) {
       setState(() {
         if (isStart) {
           startDate = picked;
+          // If "To" is null or before start, default it to today
+          if (endDate == null || endDate!.isBefore(picked)) {
+            endDate = DateTime.now();
+          }
         } else {
           endDate = picked;
+          // If "From" is null or after end, default it to start of month
+          if (startDate == null || startDate!.isAfter(picked)) {
+            startDate = picked;
+          }
         }
       });
     }
@@ -702,16 +711,10 @@ class _SalesContentState extends State<SalesContent> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          startDate == null && endDate == null
-                              ? DateFormat('MMM d, yyyy').format(
-                                  DateTime.now(),
-                                ) // show today by default
-                              : startDate != null && endDate != null
+                          startDate != null && endDate != null
                               ? "${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)}"
                               : startDate != null
-                              ? DateFormat('MMM d, yyyy').format(startDate!)
-                              : endDate != null
-                              ? DateFormat('MMM d, yyyy').format(endDate!)
+                              ? "${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(DateTime.now())}"
                               : DateFormat(
                                   'MMM d, yyyy',
                                 ).format(DateTime.now()),

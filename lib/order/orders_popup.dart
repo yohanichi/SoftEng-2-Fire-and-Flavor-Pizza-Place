@@ -97,12 +97,11 @@ class OrdersPopup {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6,
-                  minWidth: 300,
-                  maxWidth: 500,
-                ),
+              child: SizedBox(
+                height:
+                    MediaQuery.of(context).size.height *
+                    0.95, // half of screen height
+                width: MediaQuery.of(context).size.width * 0.5,
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : Column(

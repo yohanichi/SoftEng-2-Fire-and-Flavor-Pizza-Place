@@ -21,7 +21,7 @@ class InventoryUI extends StatelessWidget {
   final bool sortAscending;
   final int totalItems;
   final int lowStockCount;
-
+  final VoidCallback onRefresh;
   final bool isSidebarOpen;
   final String username;
   final String role;
@@ -103,6 +103,7 @@ class InventoryUI extends StatelessWidget {
     required this.onNextPage,
     required this.onSearch,
     required this.searchController,
+    required this.onRefresh,
     Key? key,
   }) : super(key: key);
 
@@ -502,45 +503,48 @@ class InventoryUI extends StatelessWidget {
                                       Padding(
                                         padding: const EdgeInsets.only(
                                           right: 50,
-                                        ), // adjust as needed
+                                        ),
                                         child: SizedBox(
                                           width: 500,
                                           child: TextField(
                                             controller: searchController,
-                                            style: const TextStyle(
-                                              color: Colors.black87,
-                                            ),
-                                            decoration: InputDecoration(
-                                              hintText: 'Search...',
-                                              hintStyle: const TextStyle(
-                                                color: Colors.black45,
-                                              ),
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 20,
-                                                    vertical: 12,
-                                                  ),
-                                              filled: true,
-                                              fillColor: Colors.grey[200],
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                                borderSide: BorderSide.none,
-                                              ),
-                                              prefixIcon: const Icon(
-                                                Icons.search,
-                                                color: Colors.black45,
-                                              ),
-                                            ),
                                             onChanged: (value) =>
                                                 onSearch(value.trim()),
                                             onSubmitted: (value) =>
                                                 onSearch(value.trim()),
+                                            decoration: InputDecoration(
+                                              hintText: 'Search...',
+                                              prefixIcon: const Icon(
+                                                Icons.search,
+                                              ),
+                                              // ...rest of your decoration
+                                            ),
                                           ),
                                         ),
                                       ),
-
                                       const SizedBox(width: 8),
+                                      // <-- Add Refresh button here
+                                      ElevatedButton.icon(
+                                        onPressed: onRefresh,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blueAccent,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 10,
+                                          ),
+                                        ),
+                                        icon: Image.asset(
+                                          'assets/icons/refresh.png', // <-- your refresh image path
+                                          width: 24,
+                                          height: 24,
+                                          color: Colors
+                                              .white, // optional, only if you want to tint it
+                                        ),
+                                        label: const Text(
+                                          "Refresh",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),

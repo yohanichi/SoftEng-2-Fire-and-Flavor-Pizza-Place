@@ -297,12 +297,28 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
               style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
             ),
             pw.SizedBox(height: 16),
-            pw.Text(
-              startDate != null && endDate != null
-                  ? "Date Range: ${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)}"
-                  : "Date Range: All",
-              style: const pw.TextStyle(fontSize: 14),
-            ),
+            pw.Text(() {
+              if (startDate != null && endDate != null) {
+                // Same day
+                if (DateFormat('yyyyMMdd').format(startDate!) ==
+                    DateFormat('yyyyMMdd').format(endDate!)) {
+                  return "Date: ${DateFormat('MMM d, yyyy').format(startDate!)}";
+                } else {
+                  // Different start and end dates
+                  return "Date Range: ${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)}";
+                }
+              } else if (startDate != null) {
+                // Only start date
+                return "Date: ${DateFormat('MMM d, yyyy').format(startDate!)}";
+              } else if (endDate != null) {
+                // Only end date
+                return "Date: ${DateFormat('MMM d, yyyy').format(endDate!)}";
+              } else {
+                // No date filter
+                return "Date: All";
+              }
+            }(), style: const pw.TextStyle(fontSize: 14)),
+
             pw.SizedBox(height: 16),
             // Grouped logs by date
             ...groupedLogs.entries.map((entry) {
@@ -466,19 +482,29 @@ class _MaterialDetailsPageState extends State<MaterialDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    startDate == null && endDate == null
-                        ? DateFormat('MMM d, yyyy').format(DateTime.now())
-                        : startDate != null && endDate != null
-                        ? "${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)}"
-                        : startDate != null
-                        ? DateFormat('MMM d, yyyy').format(startDate!)
-                        : DateFormat('MMM d, yyyy').format(endDate!),
+                    () {
+                      if (startDate == null && endDate == null) {
+                        return DateFormat('MMM d, yyyy').format(DateTime.now());
+                      } else if (startDate != null && endDate != null) {
+                        if (DateFormat('yyyyMMdd').format(startDate!) ==
+                            DateFormat('yyyyMMdd').format(endDate!)) {
+                          return DateFormat('MMM d, yyyy').format(startDate!);
+                        } else {
+                          return "${DateFormat('MMM d, yyyy').format(startDate!)} - ${DateFormat('MMM d, yyyy').format(endDate!)}";
+                        }
+                      } else if (startDate != null) {
+                        return DateFormat('MMM d, yyyy').format(startDate!);
+                      } else {
+                        return DateFormat('MMM d, yyyy').format(endDate!);
+                      }
+                    }(),
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
+
                   const SizedBox(height: 10),
                   Row(
                     children: [
