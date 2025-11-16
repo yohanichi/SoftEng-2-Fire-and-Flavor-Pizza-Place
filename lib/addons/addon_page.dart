@@ -7,14 +7,11 @@ import 'package:intl/intl.dart';
 class AddonPageUI extends StatelessWidget {
   final List addons;
   final bool isLoading;
-  final int? sortColumnIndex;
-  final bool sortAscending;
   final bool showHidden;
   final VoidCallback onShowHiddenToggle;
   final VoidCallback onAddEntry;
   final Function(Map) onEditAddon;
   final Function(int, String) onToggleAddon;
-  final void Function(Comparable Function(Map), int, bool) onSort;
   final String username;
   final String role;
   final String userId;
@@ -23,14 +20,11 @@ class AddonPageUI extends StatelessWidget {
   AddonPageUI({
     required this.addons,
     required this.isLoading,
-    required this.sortColumnIndex,
-    required this.sortAscending,
     required this.showHidden,
     required this.onShowHiddenToggle,
     required this.onAddEntry,
     required this.onEditAddon,
     required this.onToggleAddon,
-    required this.onSort,
     required this.username,
     required this.role,
     required this.userId,
@@ -129,7 +123,7 @@ class AddonPageUI extends StatelessWidget {
                   ),
                 ),
 
-                // Table
+                // Table grouped by categories
                 Expanded(
                   child: isLoading
                       ? const Center(child: CircularProgressIndicator())
@@ -152,170 +146,174 @@ class AddonPageUI extends StatelessWidget {
                           ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
+                              // Group addons by category
+                              final Map<String, List<Map>> groupedAddons = {};
+                              for (var addon in addons.where(
+                                (a) => showHidden
+                                    ? a['status'] == "hidden"
+                                    : a['status'] == "visible",
+                              )) {
+                                final category =
+                                    addon['category'] ?? "Uncategorized";
+                                if (!groupedAddons.containsKey(category)) {
+                                  groupedAddons[category] = [];
+                                }
+                                groupedAddons[category]!.add(addon);
+                              }
+
                               return SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      minWidth: constraints.maxWidth - 48,
-                                    ),
-                                    child: DataTable(
-                                      sortColumnIndex: sortColumnIndex,
-                                      sortAscending: sortAscending,
-                                      headingRowColor:
-                                          MaterialStateProperty.all(
-                                            Colors.orange.shade100,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: groupedAddons.entries.map((entry) {
+                                    final category = entry.key;
+                                    final categoryAddons = entry.value;
+
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
                                           ),
-                                      headingTextStyle: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                      dataTextStyle: const TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 15,
-                                      ),
-                                      dividerThickness: 1,
-                                      horizontalMargin: 24,
-                                      columnSpacing: 80,
-                                      border: TableBorder(
-                                        horizontalInside: BorderSide(
-                                          width: 0.5,
-                                          color: Colors.grey.shade300,
+                                          child: Text(
+                                            category,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      columns: [
-                                        DataColumn(
-                                          label: const Text("Name"),
-                                          onSort: (columnIndex, ascending) =>
-                                              onSort(
-                                                (addon) => addon['name'] ?? '',
-                                                columnIndex,
-                                                ascending,
-                                              ),
-                                        ),
-                                        DataColumn(
-                                          label: const Text("Category"),
-                                          onSort: (columnIndex, ascending) =>
-                                              onSort(
-                                                (addon) =>
-                                                    addon['category'] ?? '',
-                                                columnIndex,
-                                                ascending,
-                                              ),
-                                        ),
-                                        DataColumn(
-                                          label: const Text("Price"),
-                                          numeric: true,
-                                          onSort: (columnIndex, ascending) =>
-                                              onSort(
-                                                (addon) =>
-                                                    double.tryParse(
-                                                      addon['price'].toString(),
-                                                    ) ??
-                                                    0.0,
-                                                columnIndex,
-                                                ascending,
-                                              ),
-                                        ),
-                                        DataColumn(
-                                          label: const Text("Status"),
-                                          onSort: (columnIndex, ascending) =>
-                                              onSort(
-                                                (addon) =>
-                                                    addon['status'] ?? '',
-                                                columnIndex,
-                                                ascending,
-                                              ),
-                                        ),
-                                        const DataColumn(
-                                          label: Text("Actions"),
-                                        ),
-                                      ],
-                                      rows: addons
-                                          .where(
-                                            (a) => showHidden
-                                                ? a['status'] == "hidden"
-                                                : a['status'] == "visible",
-                                          )
-                                          .map<DataRow>((addon) {
-                                            return DataRow(
-                                              color:
-                                                  MaterialStateProperty.resolveWith<
-                                                    Color?
-                                                  >(
-                                                    (states) =>
-                                                        addons
-                                                            .indexOf(addon)
-                                                            .isEven
-                                                        ? Colors.grey[50]
-                                                        : Colors.white,
+                                        SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              minWidth:
+                                                  constraints.maxWidth - 48,
+                                            ),
+                                            child: DataTable(
+                                              headingRowColor:
+                                                  MaterialStateProperty.all(
+                                                    Colors.orange.shade100,
                                                   ),
-                                              cells: [
-                                                DataCell(
-                                                  Text(addon['name'] ?? ""),
+                                              headingTextStyle: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                              ),
+                                              dataTextStyle: const TextStyle(
+                                                color: Colors.black87,
+                                                fontSize: 15,
+                                              ),
+                                              dividerThickness: 1,
+                                              horizontalMargin: 24,
+                                              columnSpacing: 80,
+                                              border: TableBorder(
+                                                horizontalInside: BorderSide(
+                                                  width: 0.5,
+                                                  color: Colors.grey.shade300,
                                                 ),
-                                                DataCell(
-                                                  Text(addon['category'] ?? ""),
+                                              ),
+                                              columns: [
+                                                DataColumn(
+                                                  label: const Text("Name"),
                                                 ),
-                                                DataCell(
-                                                  Text(
-                                                    currencyFormat.format(
-                                                      double.tryParse(
-                                                            addon['price']
-                                                                .toString(),
-                                                          ) ??
-                                                          0,
-                                                    ),
-                                                  ),
+                                                DataColumn(
+                                                  label: const Text("Price"),
+                                                  numeric: true,
                                                 ),
-                                                DataCell(
-                                                  Text(addon['status'] ?? ""),
+                                                DataColumn(
+                                                  label: const Text("Status"),
                                                 ),
-                                                DataCell(
-                                                  Row(
-                                                    children: [
-                                                      IconButton(
-                                                        icon: const Icon(
-                                                          Icons.edit,
-                                                          color:
-                                                              Colors.blueAccent,
-                                                        ),
-                                                        onPressed: () =>
-                                                            onEditAddon(addon),
-                                                      ),
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          addon['status'] ==
-                                                                  "visible"
-                                                              ? Icons.visibility
-                                                              : Icons
-                                                                    .visibility_off,
-                                                          color:
-                                                              addon['status'] ==
-                                                                  "visible"
-                                                              ? Colors.green
-                                                              : Colors
-                                                                    .redAccent,
-                                                        ),
-                                                        onPressed: () =>
-                                                            onToggleAddon(
-                                                              int.parse(
-                                                                addon['id']
-                                                                    .toString(),
-                                                              ),
-                                                              addon['status'],
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                                const DataColumn(
+                                                  label: Text("Actions"),
                                                 ),
                                               ],
-                                            );
-                                          })
-                                          .toList(),
-                                    ),
-                                  ),
+                                              rows: categoryAddons.map<DataRow>((
+                                                addon,
+                                              ) {
+                                                return DataRow(
+                                                  color:
+                                                      MaterialStateProperty.resolveWith<
+                                                        Color?
+                                                      >(
+                                                        (states) =>
+                                                            categoryAddons
+                                                                .indexOf(addon)
+                                                                .isEven
+                                                            ? Colors.grey[50]
+                                                            : Colors.white,
+                                                      ),
+                                                  cells: [
+                                                    DataCell(
+                                                      Text(addon['name'] ?? ""),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        currencyFormat.format(
+                                                          double.tryParse(
+                                                                addon['price']
+                                                                    .toString(),
+                                                              ) ??
+                                                              0,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        addon['status'] ?? "",
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Row(
+                                                        children: [
+                                                          IconButton(
+                                                            icon: const Icon(
+                                                              Icons.edit,
+                                                              color: Colors
+                                                                  .blueAccent,
+                                                            ),
+                                                            onPressed: () =>
+                                                                onEditAddon(
+                                                                  addon,
+                                                                ),
+                                                          ),
+                                                          IconButton(
+                                                            icon: Icon(
+                                                              addon['status'] ==
+                                                                      "visible"
+                                                                  ? Icons
+                                                                        .visibility
+                                                                  : Icons
+                                                                        .visibility_off,
+                                                              color:
+                                                                  addon['status'] ==
+                                                                      "visible"
+                                                                  ? Colors.green
+                                                                  : Colors
+                                                                        .redAccent,
+                                                            ),
+                                                            onPressed: () =>
+                                                                onToggleAddon(
+                                                                  int.parse(
+                                                                    addon['id']
+                                                                        .toString(),
+                                                                  ),
+                                                                  addon['status'],
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
                               );
                             },
@@ -634,14 +632,11 @@ class _AddonPageState extends State<AddonPage> {
     return AddonPageUI(
       addons: addons,
       isLoading: isLoading,
-      sortColumnIndex: sortColumnIndex,
-      sortAscending: sortAscending,
       showHidden: showHidden,
       onShowHiddenToggle: () => setState(() => showHidden = !showHidden),
       onAddEntry: () => addOrEditAddon(),
       onEditAddon: (addon) => addOrEditAddon(addon: addon),
       onToggleAddon: toggleAddon,
-      onSort: onSort,
       username: widget.username,
       role: widget.role,
       userId: widget.userId,

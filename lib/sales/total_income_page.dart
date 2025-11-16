@@ -147,196 +147,160 @@ class _TotalIncomePageState extends State<TotalIncomePage> {
     final pdf = pw.Document();
     final numberFormat = NumberFormat("#,##0.00");
 
-    // Load local fonts
-    final robotoFontData = await rootBundle.load(
-      'assets/fonts/Roboto-Regular.ttf',
+    // Load fonts
+    final dejaVu = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/DejaVuSans.ttf'),
     );
-    final robotoBoldFontData = await rootBundle.load(
-      'assets/fonts/Roboto-Bold.ttf',
+    final dejaVuBold = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/DejaVuSans-Bold.ttf'),
     );
-    final robotoFont = pw.Font.ttf(robotoFontData);
-    final robotoBoldFont = pw.Font.ttf(robotoBoldFontData);
 
-    // Helper to format peso amounts
     pw.Widget pesoText(double amount, {bool bold = false}) {
-      final formattedAmount = numberFormat.format(amount);
+      final formatted = numberFormat.format(amount);
       return pw.RichText(
         text: pw.TextSpan(
           children: [
             pw.TextSpan(
               text: "₱",
-              style: pw.TextStyle(font: bold ? robotoBoldFont : robotoFont),
+              style: pw.TextStyle(font: bold ? dejaVuBold : dejaVu),
             ),
             pw.TextSpan(
-              text: formattedAmount,
-              style: pw.TextStyle(font: bold ? robotoBoldFont : robotoFont),
+              text: formatted,
+              style: pw.TextStyle(font: bold ? dejaVuBold : dejaVu),
             ),
           ],
         ),
       );
     }
 
-    // Pre-build item widgets
-    final itemWidgets = flatItems.map((item) {
-      final price = item['price'] ?? 0.0;
-      final ingredientCost = item['ingredientCost'] ?? 0.0;
-      final qty = item['quantity'] ?? 1;
+    // Build item rows (receipt style)
+    final receiptItemRows = flatItems.map((item) {
+      final price = (item['price'] ?? 0).toDouble();
+      final ingredientCost = (item['ingredientCost'] ?? 0).toDouble();
+      final qty = (item['quantity'] ?? 1).toDouble();
       final breakdown = item['ingredientsBreakdown'] as List<dynamic>? ?? [];
+
       final totalItemCost = ingredientCost * qty;
-      final totalRevenue = price * qty;
-      final profit = totalRevenue - totalItemCost;
+      final revenue = price * qty;
+      final profit = revenue - totalItemCost;
 
-      String createdAtText = '';
-      if (item['created_at'] != null && item['created_at'] != '') {
-        try {
-          final dt = DateTime.parse(item['created_at']);
-          createdAtText = DateFormat('MMM dd, yyyy hh:mm a').format(dt);
-        } catch (_) {
-          createdAtText = item['created_at'].toString();
-        }
-      }
-
-      return pw.Container(
-        margin: const pw.EdgeInsets.only(bottom: 12),
-        padding: const pw.EdgeInsets.all(12),
-        decoration: pw.BoxDecoration(
-          border: pw.Border.all(color: PdfColors.grey, width: 0.5),
-          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-          color: PdfColors.white,
-        ),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            if (createdAtText.isNotEmpty)
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
               pw.Text(
-                createdAtText,
-                style: pw.TextStyle(
-                  font: robotoFont,
-                  fontSize: 10,
-                  color: PdfColors.grey,
-                ),
+                item['menuItem'] ?? '',
+                style: pw.TextStyle(font: dejaVuBold, fontSize: 12),
               ),
-            pw.SizedBox(height: 4),
-            pw.Row(
+              pesoText(revenue),
+            ],
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text(
+            "Qty: $qty   Price: ₱${numberFormat.format(price)}",
+            style: pw.TextStyle(font: dejaVu, fontSize: 9),
+          ),
+          pw.Text(
+            "Ingredient Cost: ₱${numberFormat.format(totalItemCost)}",
+            style: pw.TextStyle(font: dejaVu, fontSize: 9),
+          ),
+          pw.Text(
+            "Profit: ₱${numberFormat.format(profit)}",
+            style: pw.TextStyle(font: dejaVuBold, fontSize: 9),
+          ),
+          if (breakdown.isNotEmpty) pw.SizedBox(height: 4),
+          if (breakdown.isNotEmpty)
+            pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Left column
-                pw.Expanded(
-                  flex: 1,
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                pw.Text(
+                  "Ingredients:",
+                  style: pw.TextStyle(font: dejaVuBold, fontSize: 9),
+                ),
+                ...breakdown.map((b) {
+                  final name = b['name'];
+                  final unitCost = (b['unitCost'] ?? 0).toDouble();
+                  final qtyUsed = (b['quantity'] ?? 0).toDouble();
+                  final totalCost = unitCost * qtyUsed * qty;
+
+                  return pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        item['menuItem'] ?? '',
-                        style: pw.TextStyle(font: robotoBoldFont, fontSize: 14),
+                        "• $name  ($qtyUsed × ₱${numberFormat.format(unitCost)})",
+                        style: pw.TextStyle(font: dejaVu, fontSize: 8),
                       ),
-                      pw.Row(
-                        children: [
-                          pw.Text(
-                            "Price: ",
-                            style: pw.TextStyle(font: robotoFont),
-                          ),
-                          pesoText(price),
-                        ],
-                      ),
-                      pw.Text(
-                        "Quantity: $qty",
-                        style: pw.TextStyle(font: robotoFont),
-                      ),
-                      pw.Row(
-                        children: [
-                          pw.Text(
-                            "Total Ingredient Cost: ",
-                            style: pw.TextStyle(font: robotoFont),
-                          ),
-                          pesoText(totalItemCost),
-                        ],
-                      ),
-                      pw.Row(
-                        children: [
-                          pw.Text(
-                            "Profit: ",
-                            style: pw.TextStyle(font: robotoFont),
-                          ),
-                          pesoText(profit, bold: true),
-                        ],
-                      ),
+                      pesoText(totalCost),
                     ],
-                  ),
-                ),
-                pw.SizedBox(width: 12),
-                // Right column: breakdown
-                pw.Expanded(
-                  flex: 2,
-                  child: breakdown.isNotEmpty
-                      ? pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              "Ingredients Breakdown:",
-                              style: pw.TextStyle(font: robotoBoldFont),
-                            ),
-                            pw.SizedBox(height: 4),
-                            ...breakdown.map((b) {
-                              final name = b['name'] ?? '';
-                              final unitCost = (b['unitCost'] ?? 0).toDouble();
-                              final qtyUsed = (b['quantity'] ?? 0).toDouble();
-                              final type = (b['type'] ?? 'menu')
-                                  .toString()
-                                  .toLowerCase();
-                              final totalCost = (unitCost * qtyUsed * qty)
-                                  .toDouble();
-
-                              String typeLabel = '';
-                              if (type == 'addon') typeLabel = ' (Addon)';
-                              if (type == 'size') typeLabel = ' (Size)';
-
-                              return pw.Row(
-                                children: [
-                                  pw.Expanded(
-                                    child: pw.Text(
-                                      "• $name$typeLabel: ($unitCost × $qtyUsed) × $qty = ",
-                                      style: pw.TextStyle(font: robotoFont),
-                                    ),
-                                  ),
-                                  pesoText(totalCost),
-                                ],
-                              );
-                            }),
-                          ],
-                        )
-                      : pw.Container(),
-                ),
+                  );
+                }),
               ],
             ),
-          ],
-        ),
+          pw.Divider(thickness: .3),
+        ],
       );
     }).toList();
 
-    // Add page
+    // --- PDF Page ---
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         build: (context) => [
-          pw.Center(
-            child: pw.Text(
-              "Total Income Report",
-              style: pw.TextStyle(font: robotoBoldFont, fontSize: 24),
-            ),
-          ),
-          pw.SizedBox(height: 12),
-          pw.Row(
+          // HEADER (like a store receipt)
+          pw.Column(
             children: [
               pw.Text(
-                "Total Profit: ",
-                style: pw.TextStyle(font: robotoBoldFont, fontSize: 18),
+                "TOTAL INCOME REPORT",
+                style: pw.TextStyle(font: dejaVuBold, fontSize: 20),
               ),
-              pesoText(totalProfit, bold: true),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                "Generated Report",
+                style: pw.TextStyle(font: dejaVu, fontSize: 10),
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                DateFormat("MMM dd, yyyy - hh:mm a").format(DateTime.now()),
+                style: pw.TextStyle(font: dejaVu, fontSize: 10),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Divider(thickness: 0.8),
             ],
           ),
-          pw.SizedBox(height: 12),
-          ...itemWidgets,
+
+          // ITEMS LIST (receipt style)
+          pw.Column(children: receiptItemRows),
+
+          pw.SizedBox(height: 10),
+          pw.Divider(thickness: 0.8),
+
+          // TOTAL SECTION (right aligned)
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text(
+                  "TOTAL PROFIT",
+                  style: pw.TextStyle(font: dejaVuBold, fontSize: 14),
+                ),
+                pesoText(totalProfit, bold: true),
+              ],
+            ),
+          ),
+
+          pw.SizedBox(height: 20),
+
+          // FOOTER
+          pw.Center(
+            child: pw.Text(
+              "Thank you for your business!",
+              style: pw.TextStyle(font: dejaVu, fontSize: 10),
+            ),
+          ),
         ],
       ),
     );

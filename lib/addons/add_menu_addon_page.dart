@@ -116,7 +116,7 @@ class _AddMenuAddonPageState extends State<AddMenuAddonPage> {
     try {
       final baseUrl = await ApiConfig.getBaseUrl();
       final res = await http.get(
-        Uri.parse("$baseUrl/menu/get_raw_materials.php"),
+        Uri.parse("$baseUrl/addons/get_raw_materials.php"),
       );
       if (res.statusCode == 200) {
         final jsonRes = json.decode(res.body);
