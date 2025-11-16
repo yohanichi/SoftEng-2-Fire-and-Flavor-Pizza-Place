@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import 'package:intl/intl.dart';
 
-class AddonPageUI extends StatelessWidget {
+class AddonPageUI extends StatefulWidget {
   final List addons;
   final bool isLoading;
   final bool showHidden;
@@ -32,7 +32,21 @@ class AddonPageUI extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _AddonPageUIState createState() => _AddonPageUIState();
+}
+
+class _AddonPageUIState extends State<AddonPageUI> {
+  final TextEditingController searchController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
+    // Filter addons based on the search query
+    List filteredAddons = widget.addons.where((addon) {
+      final searchQuery = searchController.text.toLowerCase();
+      final name = addon['name']?.toLowerCase() ?? "";
+      return name.contains(searchQuery);
+    }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       body: Row(
@@ -77,18 +91,38 @@ class AddonPageUI extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
+                      // Search Bar
+                      SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: (_) {
+                            setState(
+                              () {},
+                            ); // Trigger the UI to update when search changes
+                          },
+                          decoration: const InputDecoration(
+                            hintText: 'Search Addons...',
+                            suffixIcon: Icon(Icons.search),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Hidden/Visible Items button
                       ElevatedButton.icon(
-                        onPressed: onShowHiddenToggle,
+                        onPressed: widget.onShowHiddenToggle,
                         icon: Icon(
-                          showHidden ? Icons.visibility : Icons.visibility_off,
+                          widget.showHidden
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                           color: Colors.white,
                         ),
                         label: Text(
-                          showHidden ? "Visible Items" : "Hidden Items",
+                          widget.showHidden ? "Visible Items" : "Hidden Items",
                           style: const TextStyle(color: Colors.white),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: showHidden
+                          backgroundColor: widget.showHidden
                               ? Colors.green
                               : Colors.redAccent,
                           padding: const EdgeInsets.symmetric(
@@ -102,7 +136,7 @@ class AddonPageUI extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       ElevatedButton.icon(
-                        onPressed: onAddEntry,
+                        onPressed: widget.onAddEntry,
                         icon: const Icon(Icons.add, color: Colors.white),
                         label: const Text(
                           "Add Addon",
@@ -125,7 +159,7 @@ class AddonPageUI extends StatelessWidget {
 
                 // Table grouped by categories
                 Expanded(
-                  child: isLoading
+                  child: widget.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : Container(
                           margin: const EdgeInsets.symmetric(
@@ -146,10 +180,10 @@ class AddonPageUI extends StatelessWidget {
                           ),
                           child: LayoutBuilder(
                             builder: (context, constraints) {
-                              // Group addons by category
+                              // Group filtered addons by category
                               final Map<String, List<Map>> groupedAddons = {};
-                              for (var addon in addons.where(
-                                (a) => showHidden
+                              for (var addon in filteredAddons.where(
+                                (a) => widget.showHidden
                                     ? a['status'] == "hidden"
                                     : a['status'] == "visible",
                               )) {
@@ -250,7 +284,7 @@ class AddonPageUI extends StatelessWidget {
                                                     ),
                                                     DataCell(
                                                       Text(
-                                                        currencyFormat.format(
+                                                        widget.currencyFormat.format(
                                                           double.tryParse(
                                                                 addon['price']
                                                                     .toString(),
@@ -274,9 +308,10 @@ class AddonPageUI extends StatelessWidget {
                                                                   .blueAccent,
                                                             ),
                                                             onPressed: () =>
-                                                                onEditAddon(
-                                                                  addon,
-                                                                ),
+                                                                widget
+                                                                    .onEditAddon(
+                                                                      addon,
+                                                                    ),
                                                           ),
                                                           IconButton(
                                                             icon: Icon(
@@ -293,8 +328,8 @@ class AddonPageUI extends StatelessWidget {
                                                                   : Colors
                                                                         .redAccent,
                                                             ),
-                                                            onPressed: () =>
-                                                                onToggleAddon(
+                                                            onPressed: () => widget
+                                                                .onToggleAddon(
                                                                   int.parse(
                                                                     addon['id']
                                                                         .toString(),
@@ -319,50 +354,6 @@ class AddonPageUI extends StatelessWidget {
                             },
                           ),
                         ),
-                ),
-
-                // Currently Viewing
-                Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 30),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    transitionBuilder: (child, animation) {
-                      final offsetAnimation = Tween<Offset>(
-                        begin: const Offset(0.0, 0.5),
-                        end: Offset.zero,
-                      ).animate(animation);
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: offsetAnimation,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      key: ValueKey<bool>(showHidden),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: showHidden
-                            ? Colors.red.withOpacity(0.8)
-                            : Colors.green.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        showHidden
-                            ? "Currently Viewing: Hidden Addons"
-                            : "Currently Viewing: Visible Addons",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ],
             ),
