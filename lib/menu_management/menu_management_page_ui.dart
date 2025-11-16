@@ -173,7 +173,7 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
 
                   // Add Ingredient button
                   Tooltip(
-                    message: "Add Ingredient",
+                    message: "View Ingredients",
                     child: InkWell(
                       onTap: () => widget.onAddIngredient(id),
                       borderRadius: BorderRadius.circular(30),
@@ -184,18 +184,18 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
                           color: Colors.orange.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
-                        padding: const EdgeInsets.all(
-                          8,
-                        ), // optional, for padding inside the circle
+                        padding: const EdgeInsets.all(8),
                         child: Image.asset(
-                          'assets/icons/add_ingredient.png',
+                          'assets/icons/enter.png',
                           width: 24,
                           height: 24,
                           fit: BoxFit.contain,
+                          color: Colors.orange, // <-- makes the image orange
                         ),
                       ),
                     ),
                   ),
+
                   const SizedBox(width: 10),
                   Tooltip(
                     message: "Edit Menu",
@@ -287,7 +287,7 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
               DataCell(
                 Text("Unit", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              DataCell(SizedBox()), // header for add column
+              DataCell(SizedBox()),
               DataCell(SizedBox()), // header for actions column
             ],
           ),
@@ -327,23 +327,7 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
                   DataCell(Text(ingredient['name'] ?? "")),
                   DataCell(Text(ingredient['quantity']?.toString() ?? "")),
                   DataCell(Text(ingredient['unit']?.toString() ?? "")),
-                  DataCell(
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.playlist_add),
-                          onPressed: () async {
-                            await widget.onAddIngredient(
-                              id,
-                            ); // opens add dialog
-                            await widget.onViewIngredients(
-                              id,
-                            ); // refresh dropdown
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                  const DataCell(SizedBox()),
                   const DataCell(SizedBox()), // empty cell for actions
                 ],
               ),
