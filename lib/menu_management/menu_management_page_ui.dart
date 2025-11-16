@@ -190,7 +190,7 @@ class _MenuManagementPageUIState extends State<MenuManagementPageUI> {
                           width: 24,
                           height: 24,
                           fit: BoxFit.contain,
-                          color: Colors.orange, // <-- makes the image orange
+                          color: Colors.orange,
                         ),
                       ),
                     ),

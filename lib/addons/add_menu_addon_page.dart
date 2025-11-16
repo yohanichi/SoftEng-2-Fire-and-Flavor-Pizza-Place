@@ -29,6 +29,22 @@ class _AddMenuAddonPageState extends State<AddMenuAddonPage> {
     fetchMaterials();
   }
 
+  Map<String, List<dynamic>> groupAddonsByCategory(List<dynamic> addons) {
+    final Map<String, List<dynamic>> grouped = {};
+
+    for (var addon in addons) {
+      final category = addon['category'] ?? "Uncategorized";
+
+      if (!grouped.containsKey(category)) {
+        grouped[category] = [];
+      }
+
+      grouped[category]!.add(addon);
+    }
+
+    return grouped;
+  }
+
   void onAddAddon(int menuId) {
     // You can replace this with navigation or a popup later.
     ScaffoldMessenger.of(context).showSnackBar(
@@ -160,6 +176,7 @@ class _AddMenuAddonPageState extends State<AddMenuAddonPage> {
     int? selectedAddonId;
     int? selectedMaterialId;
     final _quantityController = TextEditingController();
+    String selectedUnit = "";
 
     await showDialog(
       context: context,
@@ -178,14 +195,40 @@ class _AddMenuAddonPageState extends State<AddMenuAddonPage> {
                     border: OutlineInputBorder(),
                   ),
                   value: selectedAddonId,
-                  items: allAddons.map<DropdownMenuItem<int>>((addon) {
-                    return DropdownMenuItem<int>(
-                      value: int.tryParse(addon['id'].toString()),
-                      child: Text(addon['name']),
-                    );
+                  items: groupAddonsByCategory(allAddons).entries.expand((
+                    entry,
+                  ) {
+                    final category = entry.key;
+                    final addons = entry.value;
+
+                    return [
+                      // Category Header (disabled)
+                      DropdownMenuItem<int>(
+                        enabled: false,
+                        child: Text(
+                          category,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+
+                      // Category Items
+                      ...addons.map((addon) {
+                        return DropdownMenuItem<int>(
+                          value: int.tryParse(addon['id'].toString()),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 12),
+                            child: Text(addon['name']),
+                          ),
+                        );
+                      }),
+                    ];
                   }).toList(),
-                  onChanged: (val) => selectedAddonId = val,
+                  onChanged: (val) => setState(() => selectedAddonId = val),
                 ),
+
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
                   decoration: const InputDecoration(
@@ -196,19 +239,48 @@ class _AddMenuAddonPageState extends State<AddMenuAddonPage> {
                   items: materials.map<DropdownMenuItem<int>>((mat) {
                     return DropdownMenuItem<int>(
                       value: int.tryParse(mat['id'].toString()),
-                      child: Text(mat['name']),
+                      child: Text(
+                        "${mat['name']} (${mat['unit']})",
+                      ), // SHOW UNIT
                     );
                   }).toList(),
-                  onChanged: (val) => selectedMaterialId = val,
+                  onChanged: (val) {
+                    selectedMaterialId = val;
+
+                    // GET UNIT OF THE SELECTED MATERIAL
+                    final mat = materials.firstWhere(
+                      (m) => m['id'].toString() == val.toString(),
+                    );
+
+                    selectedUnit = mat['unit'];
+
+                    // refresh dialog
+                    setState(() {});
+                  },
                 ),
+
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _quantityController,
-                  decoration: const InputDecoration(
-                    labelText: "Quantity",
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _quantityController,
+                        decoration: const InputDecoration(
+                          labelText: "Quantity",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      selectedUnit.isNotEmpty ? selectedUnit : "",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

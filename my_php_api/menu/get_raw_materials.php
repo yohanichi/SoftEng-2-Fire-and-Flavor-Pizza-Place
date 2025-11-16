@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 include("../db.php");
 
 try {
-    $result = $conn->query("SELECT id, name FROM raw_materials ORDER BY name ASC");
+    $result = $conn->query("SELECT id, name, unit FROM raw_materials ORDER BY name ASC");
     $materials = [];
 
     while ($row = $result->fetch_assoc()) {
