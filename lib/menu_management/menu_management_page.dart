@@ -694,12 +694,17 @@ class IngredientFormDialog extends StatefulWidget {
 class _IngredientFormDialogState extends State<IngredientFormDialog> {
   String? selectedRawMaterial;
   TextEditingController quantityController = TextEditingController();
+  String? selectedUnit; // Variable to hold the selected unit for raw material
 
   @override
   void initState() {
     super.initState();
-    if (widget.rawMaterials.isNotEmpty)
+    if (widget.rawMaterials.isNotEmpty) {
       selectedRawMaterial = widget.rawMaterials[0]['id'].toString();
+      selectedUnit = widget
+          .rawMaterials[0]['unit']; // Set the unit of the first raw material
+      quantityController.text = ""; // Initialize the quantity field
+    }
   }
 
   @override
@@ -745,7 +750,14 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
                     ),
                   )
                   .toList(),
-              onChanged: (value) => setState(() => selectedRawMaterial = value),
+              onChanged: (value) {
+                setState(() {
+                  selectedRawMaterial = value;
+                  selectedUnit = widget.rawMaterials.firstWhere(
+                    (rm) => rm['id'].toString() == value,
+                  )['unit'];
+                });
+              },
             ),
             const SizedBox(height: 12),
             TextField(
@@ -753,7 +765,9 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
               keyboardType: TextInputType.number,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: "Quantity",
+                labelText: selectedUnit != null
+                    ? "Quantity (${selectedUnit!})" // Add the unit in the label
+                    : "Quantity", // Fallback if no unit is selected
                 labelStyle: const TextStyle(color: Colors.orangeAccent),
                 enabledBorder: OutlineInputBorder(
                   borderSide: const BorderSide(color: Colors.orangeAccent),
@@ -771,9 +785,10 @@ class _IngredientFormDialogState extends State<IngredientFormDialog> {
                 ),
               ),
               onPressed: () {
+                final quantityText = quantityController.text.trim();
                 Navigator.pop(context, {
                   'raw_material_id': selectedRawMaterial,
-                  'quantity': quantityController.text.trim(),
+                  'quantity': quantityText,
                 });
               },
               child: const Text("Add"),

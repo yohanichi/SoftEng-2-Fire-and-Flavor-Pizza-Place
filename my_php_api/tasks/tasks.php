@@ -54,9 +54,11 @@ if ($action === 'add') {
     $stmt = $conn->prepare("INSERT INTO tasks (user_id, title, description, status, due_date) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("issss", $user_id, $title, $description, $status, $due_date);
 
+    $success = $stmt->execute();
+
     echo json_encode([
-        'success' => $stmt->execute(),
-        'message' => $stmt->execute() ? 'Task added successfully' : 'Failed to add task'
+        'success' => $success,
+        'message' => $success ? 'Task added successfully' : 'Failed to add task'
     ]);
     exit;
 }
@@ -81,9 +83,11 @@ if ($action === 'update') {
     $stmt = $conn->prepare("UPDATE tasks SET title=?, description=?, status=?, due_date=? WHERE id=?");
     $stmt->bind_param("ssssi", $title, $description, $status, $due_date, $id);
 
+    $success = $stmt->execute();
+
     echo json_encode([
-        'success' => $stmt->execute(),
-        'message' => $stmt->execute() ? 'Task updated successfully' : 'Failed to update task'
+        'success' => $success,
+        'message' => $success ? 'Task updated successfully' : 'Failed to update task'
     ]);
     exit;
 }
@@ -103,9 +107,11 @@ if ($action === 'delete') {
     $stmt = $conn->prepare("DELETE FROM tasks WHERE id=?");
     $stmt->bind_param("i", $id);
 
+    $success = $stmt->execute();
+
     echo json_encode([
-        'success' => $stmt->execute(),
-        'message' => $stmt->execute() ? 'Task deleted successfully' : 'Failed to delete task'
+        'success' => $success,
+        'message' => $success ? 'Task deleted successfully' : 'Failed to delete task'
     ]);
     exit;
 }

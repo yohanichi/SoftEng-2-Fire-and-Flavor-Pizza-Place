@@ -26,7 +26,7 @@ class TaskPage extends StatefulWidget {
     required this.username,
     required this.role,
     required this.userId,
-    this.isSidebarOpen = false,
+    required this.isSidebarOpen,
     required this.toggleSidebar,
     Key? key,
   }) : super(key: key);
