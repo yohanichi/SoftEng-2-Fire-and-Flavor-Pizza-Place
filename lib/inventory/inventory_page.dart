@@ -180,6 +180,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
 
   void _showEditRestockDialog(Map mat) {
     final restockCtrl = TextEditingController(text: mat['restock_level'] ?? '');
+    final unit = mat['unit'] ?? ''; // Get the unit of measure
 
     showDialog(
       context: context,
@@ -193,10 +194,13 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
           controller: restockCtrl,
           keyboardType: TextInputType.number,
           style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            labelText: "New Restock Level",
-            labelStyle: TextStyle(color: Colors.white70),
-            enabledBorder: UnderlineInputBorder(
+          decoration: InputDecoration(
+            labelText: unit.isNotEmpty
+                ? "New Restock Level ($unit)"
+                : // Display unit if available
+                  "New Restock Level",
+            labelStyle: const TextStyle(color: Colors.white70),
+            enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.orangeAccent),
             ),
           ),
@@ -222,7 +226,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
   }
 
   int currentPage = 0;
-  final int rowsPerPage = 12;
+  final int rowsPerPage = 11;
 
   void _previousPage() {
     setState(() {
@@ -533,7 +537,7 @@ class _InventoryManagementPageState extends State<InventoryManagementPage> {
       materials: materials,
       isLoading: isLoading,
       currentPage: currentPage,
-      rowsPerPage: 11,
+      rowsPerPage: rowsPerPage,
       sortColumnIndex: sortColumnIndex,
       sortAscending: sortAscending,
       lowStockSortColumnIndex: lowStockSortColumnIndex,

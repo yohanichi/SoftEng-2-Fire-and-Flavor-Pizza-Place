@@ -13,6 +13,7 @@ import '../config/api_config.dart';
 import '../inventory/inventory_page.dart';
 import '../sales/sales_page.dart';
 import '../expenses/expenses_page.dart';
+import '../vouchers/create_voucher.dart';
 
 class TaskPage extends StatefulWidget {
   final String userId;
@@ -599,6 +600,20 @@ class _TaskPageState extends State<TaskPage> {
                       (route) => false,
                     );
                   },
+                ),
+              ),
+            )
+          : null,
+      onCreateVoucher: widget.role.toLowerCase() == "manager"
+          ? () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VoucherPage(
+                  username: widget.username,
+                  role: widget.role,
+                  userId: widget.userId,
+                  isSidebarOpen: _isSidebarOpen,
+                  toggleSidebar: toggleSidebar,
                 ),
               ),
             )

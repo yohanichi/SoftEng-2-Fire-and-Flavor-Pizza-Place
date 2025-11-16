@@ -25,6 +25,7 @@ class TaskPageUI extends StatelessWidget {
   final VoidCallback? onInventory;
   final VoidCallback? onSales;
   final VoidCallback? onExpenses;
+  final VoidCallback? onCreateVoucher;
   final VoidCallback onLogout;
   final void Function(String, bool) onStatusFilterChanged;
   final Map<String, bool> statusFilter;
@@ -46,6 +47,7 @@ class TaskPageUI extends StatelessWidget {
     required this.onViewTask,
     required this.onHome,
     required this.onDashboard,
+    required this.onCreateVoucher,
     this.onAdminDashboard,
     this.onManagerPage,
     this.onMenu,
@@ -88,7 +90,7 @@ class TaskPageUI extends StatelessWidget {
                 onMenu: onMenu,
                 onSales: onSales,
                 onExpenses: onExpenses,
-                onCreateVoucher: onExpenses,
+                onCreateVoucher: onCreateVoucher,
                 onAdminDashboard: onAdminDashboard,
                 username: username,
                 role: role,
