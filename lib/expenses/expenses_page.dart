@@ -562,7 +562,8 @@ class _ExpensesContentState extends State<ExpensesContent> {
 
                   final data = jsonDecode(response.body);
                   if (data['success'] == true) {
-                    setState(() => _allExpenses.insert(0, newExpense));
+                    await _loadExpenses(); // 🔄 Refresh the entire list
+
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

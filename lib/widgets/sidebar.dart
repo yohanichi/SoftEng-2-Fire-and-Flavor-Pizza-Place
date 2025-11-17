@@ -257,20 +257,6 @@ class _SidebarState extends State<Sidebar> {
               ),
             ),
 
-          if (widget.role.toLowerCase() == "manager" &&
-              widget.onInventory != null)
-            _SidebarItem(
-              imagePath: "assets/images/inventory.png",
-              label: "Inventory Management",
-              isOpen: widget.isSidebarOpen && showText,
-              onTap: widget.onInventory,
-              hovered: hoveredLabel == "Inventory",
-              isActive: widget.activePage == "inventory",
-              gradientColors: gradientColors,
-              onHover: (hovering) =>
-                  setState(() => hoveredLabel = hovering ? "Inventory" : null),
-            ),
-
           if (widget.role.toLowerCase() == "manager" && widget.onMenu != null)
             _SidebarItem(
               imagePath: "assets/images/menu.png",
@@ -283,6 +269,20 @@ class _SidebarState extends State<Sidebar> {
               onHover: (hovering) => setState(
                 () => hoveredLabel = hovering ? "Menu Management" : null,
               ),
+            ),
+
+          if (widget.role.toLowerCase() == "manager" &&
+              widget.onInventory != null)
+            _SidebarItem(
+              imagePath: "assets/images/inventory.png",
+              label: "Inventory Management",
+              isOpen: widget.isSidebarOpen && showText,
+              onTap: widget.onInventory,
+              hovered: hoveredLabel == "Inventory",
+              isActive: widget.activePage == "inventory",
+              gradientColors: gradientColors,
+              onHover: (hovering) =>
+                  setState(() => hoveredLabel = hovering ? "Inventory" : null),
             ),
 
           if (widget.role.toLowerCase() == "manager" && widget.onSales != null)
