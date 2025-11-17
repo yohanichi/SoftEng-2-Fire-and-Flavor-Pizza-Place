@@ -19,6 +19,15 @@ if ($menu_id <= 0 || $quantity <= 0) {
     exit;
 }
 
+// 🔹 Helper: Get material name
+function getMaterialName($conn, $material_id) {
+    $stmt = $conn->prepare("SELECT name FROM raw_materials WHERE id = ?");
+    $stmt->bind_param("i", $material_id);
+    $stmt->execute();
+    $res = $stmt->get_result()->fetch_assoc();
+    return $res['name'] ?? "Unknown Material ($material_id)";
+}
+
 try {
     $conn->begin_transaction();
     $deductions = [];
@@ -63,17 +72,18 @@ try {
         $stmt->execute();
 
         if ($stmt->affected_rows === 0) {
-            throw new Exception("Not enough stock in raw_materials for material ID $material_id");
+            $name = getMaterialName($conn, $material_id);
+            throw new Exception("Not enough stock for: $name");
         }
         $stmt->close();
     }
 
-    // --- 4. Deduct from inventory_log FIFO and create OUT entries with positive cost ---
+    // --- 4. Deduct from inventory_log FIFO and create OUT entries ---
     function deduct_inventory_log($conn, $material_id, $qty_to_deduct, $user_id) {
         $reason = "Auto Deduction from Customer Order";
 
         while ($qty_to_deduct > 0) {
-            // Fetch the oldest available inventory log entry
+            // Fetch oldest available inventory log entry
             $stmt = $conn->prepare("
                 SELECT id, quantity, unit, expiration_date, cost
                 FROM inventory_log
@@ -87,24 +97,25 @@ try {
             $stmt->close();
 
             if (!$log_entry) {
-                throw new Exception("Not enough stock for material ID $material_id in inventory_log");
+                $name = getMaterialName($conn, $material_id);
+                throw new Exception("Not enough stock in inventory for: $name");
             }
 
-            // Determine how much to deduct from this entry
+            // Determine deduction amount
             $deduct_qty = min($qty_to_deduct, $log_entry['quantity']);
             $unit_cost = floatval($log_entry['cost']);
             $total_cost = $deduct_qty * $unit_cost;
 
-            // Deduct from the existing log entry
+            // Deduct from existing log entry
             $stmt = $conn->prepare("UPDATE inventory_log SET quantity = quantity - ? WHERE id = ?");
             $stmt->bind_param("di", $deduct_qty, $log_entry['id']);
             $stmt->execute();
             $stmt->close();
 
-            // Create OUT entry
+            // Create OUT log entry
             $stmt = $conn->prepare("
                 INSERT INTO inventory_log 
-                    (material_id, quantity, unit, expiration_date, reason, user_id, cost, total_cost)
+                (material_id, quantity, unit, expiration_date, reason, user_id, cost, total_cost)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $negative_qty = -$deduct_qty;
@@ -126,11 +137,10 @@ try {
         }
     }
 
-    // --- Usage ---
+    // --- Apply FIFO deductions ---
     foreach ($deductions as $material_id => $qty) {
         deduct_inventory_log($conn, $material_id, $qty, $user_id);
     }
-
 
     $conn->commit();
     echo json_encode([
